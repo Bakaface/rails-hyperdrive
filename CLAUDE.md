@@ -67,7 +67,7 @@ Bundled architecture skills live at `lib/rails_boost/skills/{rails-way,service-o
 - `ENV["RAILS_ENV"]` is forced to `"development"` in the spec helper because the engine middleware refuses anything else.
 - `before(:each)` resets `StackProfile` and `McpServer` singletons — preserve this when adding new singletons.
 - Generator specs write into `spec/tmp/install_generator/` (gitignored). 3rd-party skill discovery is exercised against `spec/fixtures/dummy_gem/`.
-- **Smoke specs** (`spec/smoke/`, tagged `:smoke`, excluded by default in `.rspec`) shell out to a real `bin/rails boost:init` subprocess against fixture apps under `spec/fixtures/smoke_apps/{minimal,services,full_stack}/` and POST JSON-RPC to a booted server. Shared bundle cache lives at `spec/tmp/smoke-bundle/`. Run with `bundle exec rspec --tag smoke`; opt-in CI job triggers on `workflow_dispatch` or PR label `run-smoke`.
+- **Smoke specs** (`spec/smoke/`, tagged `:smoke`, excluded by default in `.rspec`) shell out to a real `bin/rails boost:init` subprocess against fixture apps under `spec/fixtures/smoke_apps/{minimal,services,full_stack}/` and POST JSON-RPC to a booted server. Shared bundle cache lives at `spec/tmp/smoke-bundle/`. Run with `bundle exec rspec --tag smoke`. CI smoke job triggers on every push to `main`, on `workflow_dispatch`, or on PRs with the `run-smoke` label.
 
 ## Gemfile & dependency notes
 
