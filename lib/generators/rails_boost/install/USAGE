@@ -1,0 +1,14 @@
+Description:
+    Bootstraps Rails Boost in this app:
+      - writes .mcp.json (Claude Code config)
+      - writes CLAUDE.md (top-level instructions, references skills + StackProfile)
+      - installs selected architecture skills into .claude/skills/
+      - discovers and installs 3rd-party gem-shipped skills (with audit headers)
+      - mounts Rails::Boost::Engine at /_boost in config/routes.rb (idempotent)
+
+Examples:
+    bin/rails boost:init
+    bin/rails boost:init --yes
+    bin/rails boost:init --mount-at /admin/boost
+    bin/rails boost:init --skip-skills
+    bin/rails boost:init --dry-run

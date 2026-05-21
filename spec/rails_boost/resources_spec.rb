@@ -1,0 +1,62 @@
+require "spec_helper"
+require "rails_boost/mcp_server"
+require "json"
+
+# Exercises the two MCP resource families through the MCP::Server JSON-RPC
+# entrypoint (resources/read), matching what the StreamableHTTP transport
+# would invoke. The sample skill under spec/internal/.claude/skills/sample/
+# is consumed here.
+RSpec.describe "MCP resources end-to-end" do
+  let(:server) { Rails::Boost::McpServer.server }
+
+  def call_read(uri)
+    req = {
+      jsonrpc: "2.0",
+      id: 1,
+      method: "resources/read",
+      params: { uri: uri }
+    }
+    server.handle(req)
+  end
+
+  describe "boost://stack-profile" do
+    it "returns JSON describing the resolved StackProfile" do
+      resp = call_read("boost://stack-profile")
+      contents = resp[:result][:contents].first
+      expect(contents[:mimeType]).to eq("application/json")
+      payload = JSON.parse(contents[:text])
+      # spec/internal does not ship a Gemfile.lock, so an :error sentinel is
+      # expected — but we still want the known top-level keys present.
+      expect(payload.keys).to include("rails", "ruby")
+    end
+  end
+
+  describe "boost://skills/{name}" do
+    it "returns the body of an installed SKILL.md" do
+      resp = call_read("boost://skills/sample")
+      contents = resp[:result][:contents].first
+      expect(contents[:mimeType]).to eq("text/markdown")
+      expect(contents[:text]).to include("hello body")
+    end
+
+    it "reports an unknown skill via JSON-RPC error (resource-not-found)" do
+      resp = call_read("boost://skills/no-such-skill")
+      expect(resp[:error][:data]).to include("Resource not found")
+    end
+
+    it "rejects path-traversal attempts via JSON-RPC error" do
+      resp = call_read("boost://skills/..%2F..%2Fetc%2Fpasswd")
+      expect(resp[:error][:data]).to include("Resource not found")
+    end
+  end
+
+  describe "resources/list" do
+    it "advertises boost://stack-profile and any installed boost://skills/* URIs" do
+      req = { jsonrpc: "2.0", id: 1, method: "resources/list", params: {} }
+      resp = Rails::Boost::McpServer.server.handle(req)
+      uris = resp[:result][:resources].map { |r| r[:uri] }
+      expect(uris).to include("boost://stack-profile")
+      expect(uris).to include("boost://skills/sample")
+    end
+  end
+end

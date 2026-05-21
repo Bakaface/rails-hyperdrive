@@ -1,0 +1,41 @@
+# Rails Boost — AI Instructions
+
+This project uses Rails Boost. The MCP server is mounted at <%= mount_path %>/mcp.
+
+## Stack
+<% if stack.dig(:rails, :version) -%>
+- Rails <%= stack[:rails][:version] %>, Ruby <%= stack.dig(:ruby, :version) || RUBY_VERSION %><% if stack.dig(:database, :adapter) %>, <%= stack[:database][:adapter] %><% end %>
+<% end -%>
+<% if stack[:test].any? -%>
+- Test: <%= stack[:test].map { |t| t[:key] }.join(", ") %>
+<% end -%>
+<% if stack[:jobs].any? -%>
+- Jobs: <%= stack[:jobs].map { |t| t[:key] }.join(", ") %>
+<% end -%>
+<% if stack[:frontend].any? -%>
+- Frontend: <%= stack[:frontend].map { |t| t[:key] }.join(", ") %>
+<% end -%>
+<% if stack[:auth].any? -%>
+- Auth: <%= stack[:auth].map { |t| t[:key] }.join(", ") %>
+<% end -%>
+<% if stack[:authz].any? -%>
+- Authz: <%= stack[:authz].map { |t| t[:key] }.join(", ") %>
+<% end -%>
+
+## Active architecture skills
+<% selected_arch_skills.each do |name| -%>
+- @.claude/skills/<%= name %>/SKILL.md
+<% end -%>
+
+<% if discovered_gem_skills.any? -%>
+## Installed gem skills
+<% discovered_gem_skills.each do |skill| -%>
+- @.claude/skills/<%= skill.name %>/SKILL.md   (source: <%= skill.gem %> <%= skill.spec_version %>)
+<% end -%>
+<% end -%>
+
+## How to use the MCP tools
+Prefer `run_ruby` for inspecting live state.
+Use `run_sql` for read-only DB queries (SELECT/WITH/EXPLAIN/SHOW only).
+Use `locate_source` to find where things are defined before guessing.
+Use `list_models` and `list_routes` to map the app instead of grepping.

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "rails-boost": {
+      "url": "http://localhost:3000<%= mount_path %>/mcp",
+      "type": "http"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+test:
+  adapter: sqlite3
+  database: tmp/test.sqlite3
+  pool: 5
+
+development:
+  adapter: sqlite3
+  database: tmp/development.sqlite3
+  pool: 5

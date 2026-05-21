@@ -1,0 +1,76 @@
+require "mcp"
+require "mcp/server/transports/streamable_http_transport"
+require_relative "safety/rack_middleware"
+require_relative "tools/describe_app"
+require_relative "tools/run_ruby"
+require_relative "tools/run_sql"
+require_relative "tools/tail_logs"
+require_relative "tools/list_models"
+require_relative "tools/locate_source"
+require_relative "tools/lookup_doc"
+require_relative "tools/list_routes"
+require_relative "resources/stack_profile"
+require_relative "resources/skill"
+
+module Rails
+  module Boost
+    module McpServer
+      TOOLS = [
+        Tools::DescribeApp,
+        Tools::RunRuby,
+        Tools::RunSql,
+        Tools::TailLogs,
+        Tools::ListModels,
+        Tools::LocateSource,
+        Tools::LookupDoc,
+        Tools::ListRoutes
+      ].freeze
+
+      module_function
+
+      def server
+        @server ||= build_server
+      end
+
+      def rack_app(allowed_hosts: Safety::RackMiddleware::DEFAULT_ALLOWED_HOSTS)
+        @rack_app ||= Safety::RackMiddleware.new(
+          ::MCP::Server::Transports::StreamableHTTPTransport.new(server, stateless: true, enable_json_response: true),
+          allowed_hosts: allowed_hosts
+        )
+      end
+
+      # Reset memoization between specs to avoid singleton bleed.
+      def reset!
+        @server = nil
+        @rack_app = nil
+      end
+
+      def build_server
+        srv = ::MCP::Server.new(
+          name: "rails_boost",
+          title: "Rails Boost",
+          version: Rails::Boost::VERSION,
+          instructions: "Rails Boost MCP server. Prefer locate_source/list_models before guessing.",
+          tools: TOOLS,
+          resources: [Resources::StackProfile.resource, *Resources::Skill.installed_resources],
+          resource_templates: [Resources::Skill.template]
+        )
+
+        srv.resources_read_handler do |params|
+          uri = params[:uri] || params["uri"]
+          if uri == Resources::StackProfile::URI
+            Resources::StackProfile.read(params)
+          elsif uri.to_s.start_with?(Resources::Skill::URI_PREFIX)
+            Resources::Skill.read(params)
+          else
+            raise ::MCP::Server::RequestHandlerError.new(
+              "Resource not found: #{uri}", params, error_type: :invalid_params
+            )
+          end
+        end
+
+        srv
+      end
+    end
+  end
+end

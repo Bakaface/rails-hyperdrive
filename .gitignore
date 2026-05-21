@@ -1,0 +1,34 @@
+*.gem
+*.rbc
+/.bundle/
+/.config/
+/coverage/
+/InstalledFiles
+/pkg/
+/spec/internal/log/
+/spec/internal/tmp/
+/spec/internal/db/*.sqlite3
+/spec/internal/db/*.sqlite3-journal
+/spec/internal/storage/
+/spec/reports/
+/test/tmp/
+/test/version_tmp/
+/tmp/
+
+# bundler
+Gemfile.lock
+.bundle
+
+# rspec/yard
+.rspec_status
+.yardoc
+/doc/
+
+# logs
+*.log
+spec/tmp/
+
+# act (local GitHub Actions runner)
+.actrc
+.secrets
+
