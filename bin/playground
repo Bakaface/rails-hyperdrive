@@ -1,0 +1,99 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Materialize one of the smoke fixtures into a gitignored `playground/<variant>/`
+# directory, wire it to this gem via `path:`, run `bundle install`, and run
+# `bin/rails boost:init` — leaving a ready-to-poke-at app for manual testing
+# (Claude Code, MCP server, generator output).
+#
+# Usage:
+#   bin/playground <variant> [--force] [--no-init] [--boost-flag FLAG ...]
+#
+# Variants are the directory names under spec/fixtures/smoke_apps/.
+
+require "fileutils"
+require "optparse"
+
+REPO_ROOT       = File.expand_path("..", __dir__)
+FIXTURES_ROOT   = File.join(REPO_ROOT, "spec/fixtures/smoke_apps")
+PLAYGROUND_ROOT = File.join(REPO_ROOT, "playground")
+
+def variants
+  return [] unless Dir.exist?(FIXTURES_ROOT)
+  Dir.children(FIXTURES_ROOT).select { |c| Dir.exist?(File.join(FIXTURES_ROOT, c)) }.sort
+end
+
+def die(msg)
+  warn "playground: #{msg}"
+  exit 1
+end
+
+force = false
+run_init = true
+extra_boost_flags = []
+
+parser = OptionParser.new do |o|
+  o.banner = <<~BANNER
+    Usage: bin/playground <variant> [options]
+
+    Available variants:
+      #{variants.empty? ? "(none found in #{FIXTURES_ROOT})" : variants.join("\n      ")}
+
+    Options:
+  BANNER
+  o.on("-f", "--force", "Overwrite existing playground/<variant>") { force = true }
+  o.on("--no-init", "Skip running bin/rails boost:init") { run_init = false }
+  o.on("--boost-flag FLAG", "Extra flag passed through to boost:init (repeatable)") { |f| extra_boost_flags << f }
+  o.on("-h", "--help") { puts o; exit 0 }
+end
+
+args = parser.parse(ARGV)
+variant = args.shift or die("missing <variant>\n#{parser}")
+args.empty? or die("unexpected arguments: #{args.inspect}")
+
+src = File.join(FIXTURES_ROOT, variant)
+Dir.exist?(src) or die("unknown variant #{variant.inspect}; available: #{variants.join(", ")}")
+
+dest = File.join(PLAYGROUND_ROOT, variant)
+if Dir.exist?(dest)
+  die("#{dest} already exists; pass --force to overwrite") unless force
+  FileUtils.rm_rf(dest)
+end
+
+FileUtils.mkdir_p(PLAYGROUND_ROOT)
+# `cp -a` so executable bits on bin/* survive.
+system("cp", "-a", "#{src}/.", dest) or die("copy failed")
+
+File.open(File.join(dest, "Gemfile"), "a") do |f|
+  f.write(%(gem "rails_boost", path: #{REPO_ROOT.inspect}\n))
+end
+
+puts "playground: created #{dest}"
+
+# Scrub parent bundler env so the child resolves the playground's own Gemfile,
+# even if bin/playground was launched from inside a bundle.
+child_env = {
+  "BUNDLE_GEMFILE"    => nil,
+  "BUNDLE_PATH"       => nil,
+  "BUNDLE_FROZEN"     => nil,
+  "BUNDLE_DEPLOYMENT" => nil,
+  "RUBYOPT"           => nil
+}
+
+Dir.chdir(dest) do
+  puts "playground: bundle install"
+  system(child_env, "bundle", "install") or die("bundle install failed")
+
+  if run_init
+    boost_flags = ["--yes", *extra_boost_flags]
+    puts "playground: bin/rails boost:init #{boost_flags.join(" ")}"
+    # `--` separator stops Rails' own command runner from eating our flags.
+    system(child_env, "bundle", "exec", "bin/rails", "boost:init", "--", *boost_flags) or die("boost:init failed")
+  end
+end
+
+rel = File.join("playground", variant)
+puts
+puts "playground ready at #{rel}"
+puts "  cd #{rel}"
+puts "  bundle exec bin/rails server   # serves MCP at /_boost/mcp"
