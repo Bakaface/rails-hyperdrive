@@ -1,0 +1,26 @@
+[tools]
+ruby = "3.4.7"
+
+[tasks.setup]
+alias = "s"
+run = "bin/setup"
+
+[tasks.console]
+alias = "c"
+run = "bin/console"
+
+[tasks.test]
+alias = "t"
+run = "bundle exec rspec"
+
+[tasks.smoke]
+description = "Run end-to-end smoke specs (opt-in; ~60s first run)"
+run = "bundle exec rspec --tag smoke"
+
+[tasks.playground]
+alias = "pg"
+description = "Materialize a smoke fixture under playground/<variant>/ and run boost:init"
+usage = '''
+arg "<variant>" help="Fixture name from spec/fixtures/smoke_apps/ (minimal, services, full_stack)"
+'''
+run = "bin/playground $usage_variant"

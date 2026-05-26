@@ -35,3 +35,6 @@ spec/tmp/
 # bin/playground output (materialized smoke fixtures for manual testing)
 /playground/
 
+# mise personal overrides
+/mise.local.toml
+
