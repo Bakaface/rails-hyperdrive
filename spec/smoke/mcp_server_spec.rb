@@ -10,7 +10,7 @@ RSpec.describe "MCP server smoke", :smoke do
   around do |ex|
     Smoke.add_path_gem!(app_dir)
     Smoke.bundle_install!(app_dir)
-    Smoke.run_hyperdrive_init!(app_dir, "--yes")
+    Smoke.run_hyperdrive_init!(app_dir)
     pid, port = Smoke.boot_server!(app_dir)
     @port = port
     begin

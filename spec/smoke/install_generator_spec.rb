@@ -6,24 +6,22 @@ require_relative "smoke_helper"
 #   - bin/rails -> rake -> Thor argv plumbing
 #   - engine rake-task loading (regression guard for double-load bug)
 #   - StackProfile reading a real bundle-resolved Gemfile.lock
-#   - Heuristic skill selection based on actual app/services|queries|forms dirs
+#   - the in-bundle artifact walk against a real Bundler.load.specs
+#
+# These apps ship no companion gems, so init is a zero-content install: it
+# generates stack.md + index.md + the lockfile + the CLAUDE.md import line, and
+# mounts the engine. Stack facts/steering live in stack.md, not CLAUDE.md.
 RSpec.describe "hyperdrive:init smoke", :smoke do
   scenarios = {
     "minimal" => {
-      expected_arch_skills: %w[rails-way],
-      forbidden_arch_skills: %w[service-objects query-objects form-objects],
-      stack_includes: ["Rails "],
+      stack_includes: ["**Rails:**"],
       stack_excludes: %w[devise sidekiq pundit]
     },
     "services" => {
-      expected_arch_skills: %w[rails-way service-objects],
-      forbidden_arch_skills: %w[query-objects form-objects],
-      stack_includes: ["Rails "],
+      stack_includes: ["**Rails:**"],
       stack_excludes: %w[devise sidekiq pundit]
     },
     "full_stack" => {
-      expected_arch_skills: %w[rails-way],
-      forbidden_arch_skills: %w[service-objects query-objects form-objects],
       stack_includes: %w[devise sidekiq pundit],
       stack_excludes: []
     }
@@ -39,7 +37,7 @@ RSpec.describe "hyperdrive:init smoke", :smoke do
       end
 
       it "writes the expected files exactly once and mounts the engine" do
-        out, status = Smoke.run_hyperdrive_init!(app_dir, "--yes")
+        out, status = Smoke.run_hyperdrive_init!(app_dir)
 
         expect(status.success?).to be(true), "hyperdrive:init failed:\n#{out}"
 
@@ -50,46 +48,51 @@ RSpec.describe "hyperdrive:init smoke", :smoke do
 
         expect(File.exist?(File.join(app_dir, ".mcp.json"))).to be(true)
         expect(File.exist?(File.join(app_dir, "CLAUDE.md"))).to be(true)
+        expect(File.exist?(File.join(app_dir, ".claude/hyperdrive/stack.md"))).to be(true)
+        expect(File.exist?(File.join(app_dir, ".claude/hyperdrive/index.md"))).to be(true)
+        expect(File.exist?(File.join(app_dir, ".hyperdrive/lock.yml"))).to be(true)
 
-        expected[:expected_arch_skills].each do |skill|
-          path = File.join(app_dir, ".claude/skills", skill, "SKILL.md")
-          expect(File.exist?(path)).to be(true), "expected #{path} to exist for #{fixture}"
-        end
-
-        expected[:forbidden_arch_skills].each do |skill|
-          path = File.join(app_dir, ".claude/skills", skill, "SKILL.md")
-          expect(File.exist?(path)).to be(false), "did NOT expect #{path} for #{fixture}"
-        end
+        # rails-hyperdrive ships no bundled skills; a clean app installs none.
+        expect(Dir.exist?(File.join(app_dir, ".claude/skills"))).to be(false)
 
         mcp_json = JSON.parse(File.read(File.join(app_dir, ".mcp.json")))
         expect(mcp_json.dig("mcpServers", "rails-hyperdrive", "url")).to include("/_hyperdrive/mcp")
 
+        # CLAUDE.md is user-owned and carries only the single import line.
         claude_md = File.read(File.join(app_dir, "CLAUDE.md"))
+        expect(claude_md).to include("@.claude/hyperdrive/index.md")
+
+        # index.md aggregates the generated stack guideline.
+        expect(File.read(File.join(app_dir, ".claude/hyperdrive/index.md"))).to include("@stack.md")
+
+        # Stack facts + steering live in the generated stack.md.
+        stack_md = File.read(File.join(app_dir, ".claude/hyperdrive/stack.md"))
         expected[:stack_includes].each do |tok|
-          expect(claude_md).to include(tok), "CLAUDE.md missing #{tok.inspect}:\n#{claude_md}"
+          expect(stack_md).to include(tok), "stack.md missing #{tok.inspect}:\n#{stack_md}"
         end
         expected[:stack_excludes].each do |tok|
-          expect(claude_md).not_to include(tok)
+          expect(stack_md).not_to include(tok)
         end
 
         routes = File.read(File.join(app_dir, "config/routes.rb"))
         expect(routes).to include("Rails::Hyperdrive::Engine")
         expect(routes).to include("/_hyperdrive")
 
-        # Idempotency: re-running should report "identical" and not duplicate
+        # Idempotency: re-running leaves files untouched and never duplicates
         # the mount.
-        out2, status2 = Smoke.run_hyperdrive_init!(app_dir, "--yes")
+        out2, status2 = Smoke.run_hyperdrive_init!(app_dir)
         expect(status2.success?).to be(true), out2
-        expect(out2).to include("identical")
+        expect(out2).to match(/identical|unchanged/)
         routes_after = File.read(File.join(app_dir, "config/routes.rb"))
         expect(routes_after.scan("Rails::Hyperdrive::Engine").length).to eq(1)
       end
 
       it "honors --dry-run" do
-        out, status = Smoke.run_hyperdrive_init!(app_dir, "--yes", "--dry-run")
+        out, status = Smoke.run_hyperdrive_init!(app_dir, "--dry-run")
         expect(status.success?).to be(true), out
         expect(File.exist?(File.join(app_dir, ".mcp.json"))).to be(false)
         expect(File.exist?(File.join(app_dir, "CLAUDE.md"))).to be(false)
+        expect(File.exist?(File.join(app_dir, ".claude/hyperdrive/stack.md"))).to be(false)
         routes = File.read(File.join(app_dir, "config/routes.rb"))
         expect(routes).not_to include("Rails::Hyperdrive::Engine")
       end

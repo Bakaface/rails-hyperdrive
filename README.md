@@ -1,10 +1,15 @@
 # Rails Hyperdrive
 
-> Dev-only Rails engine that bootstraps an MCP server + architecture skills for AI coding agents (Claude Code first).
+> Dev-only Rails engine that bootstraps an MCP server + skills/guidelines for AI coding agents (Claude Code first).
 
 Rails Hyperdrive mounts an [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server at `http://localhost:3000/_hyperdrive/mcp` in development, exposing **8 introspection tools** so AI agents stop guessing — they can eval Ruby, query the DB (read-only), tail logs, list models and routes, locate source, fetch docs, and snapshot the stack.
 
-It also ships a `hyperdrive:init` generator that installs **architecture skills** (Rails Way, Service Objects, Query Objects, Form Objects) and auto-discovers **per-gem skills** that 3rd-party gems ship under a documented convention.
+It also ships a `hyperdrive:init` generator that discovers and installs **two artifact types** that companion gems ship under a documented contract:
+
+- **Skills** — lazy, model-invoked via Claude Code's native description matcher. Procedural ("how to write an idempotent Sidekiq job"). Installed to `.claude/skills/<name>/SKILL.md`.
+- **Guidelines** — eager, always in context via `@`-include from `CLAUDE.md`. Declarative ("this app uses Pundit, not CanCanCan"). Installed to `.claude/hyperdrive/guidelines/<name>.md`.
+
+**rails-hyperdrive is the mechanism; companion gems are the content.** rails-hyperdrive itself ships no skills or guidelines — only the contract, the discovery/install engine, and a generated `stack.md`. Content comes from companion gems (`rails-hyperdrive-<library>`, e.g. `rails-hyperdrive-sidekiq`), following the [RuboCop ecosystem](https://github.com/rubocop/rubocop) precedent.
 
 Built on the official [`mcp` gem](https://github.com/modelcontextprotocol/ruby-sdk). MIT-licensed.
 
@@ -16,36 +21,33 @@ Built on the official [`mcp` gem](https://github.com/modelcontextprotocol/ruby-s
 # 1. Add the dev gem
 $ bundle add rails-hyperdrive --group=development
 
-# 2. Run the generator
+# 2. (Optional) Add a companion gem for your stack
+$ bundle add rails-hyperdrive-sidekiq --group=development
+
+# 3. Run the generator
 $ bin/rails hyperdrive:init
 
-  detected: Rails 8.0.1, Ruby 3.3.6, Postgres, RSpec, Sidekiq, Hotwire
-  detected gem-shipped skills: sidekiq (1), devise (1), pundit (1)
+  create  .mcp.json
+  insert  config/routes.rb
+  create  .claude/hyperdrive/stack.md
+  create  .claude/hyperdrive/guidelines/jobs-sidekiq.md   (from rails-hyperdrive-sidekiq@1.2.0)
+  create  .claude/skills/sidekiq-idempotency/SKILL.md      (from rails-hyperdrive-sidekiq@1.2.0)
+  create  .claude/hyperdrive/index.md
+  create  CLAUDE.md
+  create  .hyperdrive/lock.yml
+   eager  1 guideline(s) + stack.md, ~420 tokens always in context
 
-  Which architecture style does this app use?
-    [x] rails-way            (DHH conventions)
-    [ ] service-objects      (suggested: app/services/ found)
-    [ ] query-objects
-    [ ] form-objects
-    > [Enter to accept, space to toggle, q to quit]
+    done  hyperdrive initialized
 
-  wrote .mcp.json
-  wrote CLAUDE.md
-  wrote .claude/skills/rails-way/SKILL.md
-  wrote .claude/skills/sidekiq-jobs/SKILL.md           (from sidekiq 7.3.4)
-  wrote .claude/skills/devise-auth/SKILL.md            (from devise 4.9.4)
-  wrote .claude/skills/pundit-authz/SKILL.md           (from pundit 2.4.0)
-  mounted Rails::Hyperdrive::Engine at /_hyperdrive in config/routes.rb
-
-  done.
-
-# 3. Start the dev server
+# 4. Start the dev server
 $ bin/dev
 
-# 4. Open Claude Code in the project directory
+# 5. Open Claude Code in the project directory
 # → Claude Code reads .mcp.json, connects to http://localhost:3000/_hyperdrive/mcp
-# → agent has 8 tools + the installed skills + the stack-aware CLAUDE.md
+# → agent has 8 tools, the eager guidelines (via CLAUDE.md), and the lazy skills
 ```
+
+Re-run `hyperdrive:init` any time to re-sync; it leaves locally-modified files untouched (skip + warn). Run `hyperdrive:update` to force-overwrite them.
 
 ---
 
@@ -69,31 +71,43 @@ $ bin/dev
 - `hyperdrive://stack-profile` — JSON of the resolved `StackProfile`
 - `hyperdrive://skills/{name}` — markdown body of each installed skill
 
-### Architecture skills
+### Generated content
 
-`rails-way`, `service-objects`, `query-objects`, `form-objects` — written as `SKILL.md` files, installed into `.claude/skills/<name>/`.
+rails-hyperdrive generates exactly one content file itself — `.claude/hyperdrive/stack.md`, a guideline derived from your `Gemfile.lock` (stack facts + steering + how to use the MCP tools). Everything else under `.claude/` comes from companion gems.
 
-### 3rd-party gem skill contract
-
-A gem ships skills at:
+### Install layout
 
 ```
-<gem-source>/lib/<gem_name>/hyperdrive/skills/<skill_name>[-v<major>]/SKILL.md
+CLAUDE.md                              # user-owned; ONE injected line: @.claude/hyperdrive/index.md
+.claude/hyperdrive/
+  index.md                             # managed aggregator: @stack.md + @guidelines/<name>.md
+  stack.md                             # rails-hyperdrive-generated stack guideline
+  guidelines/<name>.md                 # companion-shipped, frontmatter stripped, audit-headered
+.claude/skills/<name>/SKILL.md         # companion-shipped, frontmatter kept, audit-headered
+.hyperdrive/lock.yml                   # git-tracked manifest (source gem, version, content hash)
 ```
 
-with required YAML frontmatter:
+### Companion gem contract
+
+A companion gem ships artifacts under:
+
+```
+<gem-source>/lib/<gem_name>/hyperdrive/skills/<name>/SKILL.md       # skill (dir-per-skill)
+<gem-source>/lib/<gem_name>/hyperdrive/guidelines/<name>.md         # guideline (flat file)
+```
+
+with four required YAML frontmatter fields:
 
 ```yaml
 ---
-name: sidekiq-jobs
-description: Background job patterns for Sidekiq — idempotency, retries, perform_async/in/at.
-gem: sidekiq
-versions: "~> 7.0"
-category: jobs
+name: jobs-sidekiq                # kebab-case, equals filename/dir stem
+description: Background job conventions for Sidekiq.
+gem: sidekiq                      # the TARGET gem (resolved + version-matched in the bundle)
+versions: ">= 7.0, < 9.0"         # Gem::Requirement matched against the target gem
 ---
 ```
 
-`hyperdrive:init` discovers all such files, version-matches each against the gem in the lockfile, installs the winner with an audit header naming `source`, `version`, `sha256`, and `installed_at`.
+`gem:` is the **target** (must be present in the bundle; its resolved version is matched against `versions:`). Use `railties` for "every Rails app" or the quoted `"*"` for "always applicable" (it must be quoted — bare `*` is a YAML alias and the file is skipped). `hyperdrive:init` discovers every such file across the bundle, version-matches it, and installs it with an audit header naming `source`, `sha256`, and `installed_at`. Guidelines are installed with their frontmatter stripped (they are `@`-included eagerly). When two gems ship a same-named artifact, both install, each postfixed by source gem.
 
 ---
 

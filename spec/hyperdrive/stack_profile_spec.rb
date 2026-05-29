@@ -1,5 +1,6 @@
 require "spec_helper"
 require "rails/hyperdrive/stack_profile"
+require "rails/hyperdrive/bundler_artifact_discovery"
 
 RSpec.describe Rails::Hyperdrive::StackProfile do
   let(:lockfile) { File.expand_path("../fixtures/gemfile_lock/standard.lock", __dir__) }
@@ -64,5 +65,11 @@ RSpec.describe Rails::Hyperdrive::StackProfile do
     keys = profile[:db_gems].map { |g| g[:key] }
     # pg is in :db category in gem_categories.yml
     expect(keys).to include(:pg)
+  end
+
+  it "returns an empty gem_skills list when discovery raises (never propagates)" do
+    allow(Rails::Hyperdrive::BundlerArtifactDiscovery)
+      .to receive(:discover).and_raise(StandardError, "bundler exploded")
+    expect(described_class.from_lockfile(lockfile).to_h[:gem_skills]).to eq([])
   end
 end

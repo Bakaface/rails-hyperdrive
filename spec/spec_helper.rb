@@ -1,7 +1,6 @@
 require "simplecov"
 SimpleCov.start do
   add_filter "/spec/"
-  add_filter "/lib/rails/hyperdrive/skills/"
   add_filter "/lib/generators/hyperdrive/install/templates/"
 end
 

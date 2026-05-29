@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-`rails-hyperdrive` is a **dev-only Rails engine gem** that mounts an MCP (Model Context Protocol) server at `/_hyperdrive/mcp` exposing 8 introspection tools for AI coding agents, plus a `hyperdrive:init` generator that installs architecture skills and auto-discovers per-gem skills.
+`rails-hyperdrive` is a **dev-only Rails engine gem** that mounts an MCP (Model Context Protocol) server at `/_hyperdrive/mcp` exposing 8 introspection tools for AI coding agents, plus `hyperdrive:init` / `hyperdrive:update` generators that discover and install two artifact types — **skills** (lazy) and **guidelines** (eager) — shipped by companion gems under a documented contract.
+
+**rails-hyperdrive is the mechanism; companion gems (`rails-hyperdrive-<library>`) are the content.** The gem ships no skills or guidelines of its own — only the contract, the discovery/install engine, and a single generated `stack.md`.
 
 This is the gem itself, **not** an app that uses it. There is no host Rails app — specs boot a tiny in-memory app via Combustion at `spec/internal/`.
 
@@ -62,30 +64,43 @@ SQL safety (`sql_safety.rb`) is a regex pair: an allowed-leader pattern (`SELECT
 
 ### Shared state between generator and runtime
 
-`StackProfile` (`lib/rails/hyperdrive/stack_profile.rb`) parses `Gemfile.lock` into a categorized stack snapshot. **Both** the `hyperdrive:init` generator (to render `CLAUDE.md`/`.mcp.json`) **and** the `describe_app` MCP tool / `hyperdrive://stack-profile` resource consume it. This is deliberate — installer and running server must not drift on what "this app's stack" means. Gem→category mapping lives in `lib/rails/hyperdrive/data/gem_categories.yml`.
+`StackProfile` (`lib/rails/hyperdrive/stack_profile.rb`) parses `Gemfile.lock` into a categorized stack snapshot. **Both** the `hyperdrive:init` generator (to render `stack.md` + `.mcp.json`) **and** the `describe_app` MCP tool / `hyperdrive://stack-profile` resource consume it. This is deliberate — installer and running server must not drift on what "this app's stack" means. Gem→category mapping lives in `lib/rails/hyperdrive/data/gem_categories.yml`. Its `gem_skills_info` defers to `BundlerArtifactDiscovery` (below) and lists each installed skill as a `(name, source)` pair.
 
-### 3rd-party skill discovery contract
+### Companion-gem artifact discovery contract
 
-`SkillDiscovery` (`lib/rails/hyperdrive/skill_discovery.rb`) walks `Bundler.load.specs` looking for `<gem-source>/lib/<gem_name>/hyperdrive/skills/**/SKILL.md` with required YAML frontmatter (`name`, `description`, `gem`, `versions`). It version-matches `versions` (a `Gem::Requirement` string) against the resolved spec and, when multiple variants exist (e.g. `dummy-v1/`, `dummy-v2/`), the **highest spec_version wins per `name:` key**.
+`BundlerArtifactDiscovery` (`lib/rails/hyperdrive/bundler_artifact_discovery.rb`) walks `Bundler.load.specs` for **two artifact types**:
 
-`AuditHeader` (`lib/rails/hyperdrive/audit_header.rb`) then injects `source=<gem>@<version>`, `sha256=...`, and `installed_at=...` as YAML comments **inside** the skill's frontmatter (so the skill parser still sees a valid schema).
+- **Skills** — `<gem-source>/lib/<gem_name>/hyperdrive/skills/**/SKILL.md` (dir-per-skill). Also honors a `hyperdrive_skills_dir` gemspec-metadata override (union of convention path + override; `..` segments rejected).
+- **Guidelines** — `<gem-source>/lib/<gem_name>/hyperdrive/guidelines/<name>.md` (flat file, convention path only).
+
+Both carry YAML frontmatter with four required fields: `name`, `description`, `gem`, `versions`. **Target vs. source:** `gem:` is the *target* (must be present in the bundle; its resolved version is matched against `versions:`, a `Gem::Requirement` string). `spec.name` during the walk is the *source* (provenance / audit header / conflict postfix). `gem: "*"` is universal (no target resolved, `versions:` ignored — must be quoted, bare `*` is a YAML alias and is skipped); `gem: railties` is a normal target, version-gated against the resolved Rails. The parser is **permissive**: unknown keys ignored; a missing field / malformed YAML / version mismatch / absent target → skip with a warning (collected, printed to stdout), never raised.
+
+Dedup is **two-phase**. *Phase 1* (discovery) collapses same-name variants **within one source gem** to the highest `spec_version` (path as tiebreak); composite identity is `(name, source_gem, artifact_type)`. *Phase 2* (install, in the generator) groups Phase-1 survivors across sources: one source → canonical path; multiple sources → install **all**, each postfixed `--<source_gem>` on the path (and, for skills, on the display `name:`).
+
+`AuditHeader` (`lib/rails/hyperdrive/audit_header.rb`) records `source=<gem>@<version>`, `sha256=...`, `installed_at=...` in two syntaxes: **YAML comments inside the frontmatter** for skills (frontmatter kept, so the skill parser still sees a valid schema), and a **prepended HTML-comment block** for guidelines + `stack.md` (frontmatter stripped on install). `sha256` is computed over the install-ready body *before* injection, so `strip(installed_file)` round-trips exactly — the basis for drift detection.
+
+### Generated stack.md
+
+`StackDocument` (`lib/rails/hyperdrive/stack_document.rb`) renders `stack.md` — the only content a zero-companion install produces. Body-only markdown (facts: Rails/Ruby/DB → per-bucket steering → trailing `## MCP tools`); the installer adds the HTML audit header with `source: internal@<version>`. Display labels + per-gem steering clauses live in the sibling `lib/rails/hyperdrive/data/stack_steering.yml` (steering is emitted only when a gem is the sole member of its bucket). `gem_categories.yml` stays untouched.
+
+### Lockfile + idempotency/drift
+
+`LockFile` (`lib/rails/hyperdrive/lock_file.rb`) reads/writes the git-tracked `.hyperdrive/lock.yml` manifest: per-file `source`, canonical `source_sha` (hash of the install-ready body), `installed_at` (volatile, never compared), plus `claude_md.state`. The generator's drift state machine: file current (`disk_sha == lock == gem`) → leave untouched; gem upgraded, file unedited → rewrite; user-edited → **skip + warn on `init`**, **force-overwrite on `update`**; missing → reinstall; orphan (source gem gone, file remains) → warn + leave. Two opt-out state machines, both persistent and "never re-add": the single `@.claude/hyperdrive/index.md` line in `CLAUDE.md` (`present | removed-by-user`), and per-guideline opt-out by deleting its `@`-line from `index.md`.
 
 ### Generator
 
-`lib/generators/hyperdrive/install/install_generator.rb` is invoked via `bin/rails hyperdrive:init` (wired by `lib/tasks/hyperdrive.rake`). Public flags: `--yes`, `--mount-at`, `--skip-skills`, `--dry-run` (translated to Thor's `pretend`), `--force-install`. Heuristic defaults look at `app/services`, `app/queries`, `app/forms`. Interactive prompts use `tty-prompt`; non-TTY or `--yes` falls through to the heuristic.
-
-Bundled architecture skills live at `lib/rails/hyperdrive/skills/{rails-way,service-objects,query-objects,form-objects}/SKILL.md` and are copied to `.claude/skills/<name>/` in the host app.
+`lib/generators/hyperdrive/install/install_generator.rb` backs `bin/rails hyperdrive:init` and `hyperdrive:update` (wired by `lib/tasks/hyperdrive.rake`). Public flags: `--mount-at`, `--skip-skills`, `--dry-run` (translated to Thor's `pretend`), `--force-install`, `--update`. It is non-interactive — `update_mode?` is `--update || --force-install`. The pipeline: verify env → parse `StackProfile` → discover artifacts → write `.mcp.json` → (optionally) write initializer → mount engine → `sync_content` (Phase-2 plan, install skills/guidelines/`stack.md` with audit headers via the drift state machine, maintain `index.md`, inject the one `CLAUDE.md` line, write the lock, print warnings + eager footprint) → summary. Skills install to `.claude/skills/<name>/SKILL.md` (frontmatter kept); guidelines to `.claude/hyperdrive/guidelines/<name>.md` (frontmatter stripped, `@`-included via `index.md`).
 
 ## Test infrastructure
 
 - **Combustion** (`spec/spec_helper.rb`) boots a real Rails app from `spec/internal/`. Schema is `spec/internal/db/schema.rb` (Users + Posts on SQLite).
 - `ENV["RAILS_ENV"]` is forced to `"development"` in the spec helper because the engine middleware refuses anything else.
 - `before(:each)` resets `StackProfile` and `McpServer` singletons — preserve this when adding new singletons.
-- Generator specs write into `spec/tmp/install_generator/` (gitignored). 3rd-party skill discovery is exercised against `spec/fixtures/dummy_gem/`.
-- **Smoke specs** (`spec/smoke/`, tagged `:smoke`, excluded by default in `.rspec`) shell out to a real `bin/rails hyperdrive:init` subprocess against fixture apps under `spec/fixtures/smoke_apps/{minimal,services,full_stack}/` and POST JSON-RPC to a booted server. Shared bundle cache lives at `spec/tmp/smoke-bundle/`. Run with `bundle exec rspec --tag smoke`. CI smoke job triggers on every push to `main`, on `workflow_dispatch`, or on PRs with the `run-smoke` label.
+- Generator specs write into `spec/tmp/install_generator/` (gitignored) and **stub `BundlerArtifactDiscovery.discover`** to inject `Artifact` structs (default: empty → zero-content install). Real artifact discovery is exercised against `spec/fixtures/dummy_gem/` and `spec/fixtures/companion_gem/` (the latter targets `dummy_gem` from a different source, covering the target/source split + cross-source collision).
+- **Smoke specs** (`spec/smoke/`, tagged `:smoke`, excluded by default in `.rspec`) shell out to a real `bin/rails hyperdrive:init` subprocess against fixture apps under `spec/fixtures/smoke_apps/{minimal,services,full_stack}/` and POST JSON-RPC to a booted server. These apps ship no companion gems, so init is a zero-content install (stack.md + index.md + lock.yml + the one CLAUDE.md import line). Shared bundle cache lives at `spec/tmp/smoke-bundle/`. Run with `bundle exec rspec --tag smoke`. CI smoke job triggers on every push to `main`, on `workflow_dispatch`, or on PRs with the `run-smoke` label.
 
 ## Gemfile & dependency notes
 
 - `Gemfile.lock` is **gitignored** — Bundler resolves fresh each install. CI keys its cache off `RAILS_VERSION` to avoid cross-slot bleed.
-- Runtime deps: `railties`, `activerecord` (both `>= 7.2, < 8.1`), `mcp ~> 0.17`, `tty-prompt ~> 0.23`, `bundler >= 2.3`.
+- Runtime deps: `railties`, `activerecord` (both `>= 7.2, < 8.1`), `mcp ~> 0.17`, `bundler >= 2.3`.
 - License must stay MIT throughout, including transitive runtime deps — no Apache-licensed runtime additions.

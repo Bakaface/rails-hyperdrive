@@ -153,13 +153,16 @@ module Rails
       end
 
       # Loaded lazily and rescued broadly so StackProfile stays usable in
-      # contexts where Bundler is absent or refuses to resolve.
+      # contexts where Bundler is absent or refuses to resolve. Lists every
+      # installed skill as a (name, source) pair — never collapses across
+      # source gems (see BundlerArtifactDiscovery Phase 1/2).
       def gem_skills_info
-        require "rails/hyperdrive/skill_discovery"
-        ::Rails::Hyperdrive::SkillDiscovery.discover.map do |skill|
+        require "rails/hyperdrive/bundler_artifact_discovery"
+        ::Rails::Hyperdrive::BundlerArtifactDiscovery.discover.select(&:skill?).map do |skill|
           {
             name: skill.name,
-            gem: skill.gem,
+            gem: skill.target_gem,
+            source: skill.source_gem,
             version: skill.spec_version,
             path: skill.path,
             sha256: Digest::SHA256.hexdigest(skill.body.to_s)

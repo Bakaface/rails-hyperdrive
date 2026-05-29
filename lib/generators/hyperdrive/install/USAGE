@@ -1,14 +1,21 @@
 Description:
     Bootstraps Rails Hyperdrive in this app:
       - writes .mcp.json (Claude Code config)
-      - writes CLAUDE.md (top-level instructions, references skills + StackProfile)
-      - installs selected architecture skills into .claude/skills/
-      - discovers and installs 3rd-party gem-shipped skills (with audit headers)
       - mounts Rails::Hyperdrive::Engine at /_hyperdrive in config/routes.rb (idempotent)
+      - generates .claude/hyperdrive/stack.md (stack facts + steering)
+      - discovers companion-gem skills + guidelines in the bundle and installs
+        them with audit headers (skills to .claude/skills/, guidelines to
+        .claude/hyperdrive/guidelines/)
+      - maintains the .claude/hyperdrive/index.md aggregator and injects one
+        @-include line into CLAUDE.md
+      - tracks everything in .hyperdrive/lock.yml
+
+    Re-running re-syncs and leaves locally-modified files untouched (skip + warn).
+    Use hyperdrive:update (or --update) to force-overwrite them.
 
 Examples:
     bin/rails hyperdrive:init
-    bin/rails hyperdrive:init --yes
     bin/rails hyperdrive:init --mount-at /admin/hyperdrive
     bin/rails hyperdrive:init --skip-skills
     bin/rails hyperdrive:init --dry-run
+    bin/rails hyperdrive:update
