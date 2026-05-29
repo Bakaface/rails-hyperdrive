@@ -161,6 +161,13 @@ RSpec.describe Rails::Hyperdrive::BundlerArtifactDiscovery do
     end
   end
 
+  describe "safe_bundler_specs" do
+    it "returns [] when Bundler cannot resolve the bundle" do
+      allow(::Bundler).to receive(:load).and_raise(::Bundler::GemfileNotFound)
+      expect(described_class.discover).to eq([])
+    end
+  end
+
   describe "permissive parser" do
     it "warns and skips on a version mismatch rather than raising" do
       old_spec = spec_double("dummy_gem", "2.5.0", dummy_root)

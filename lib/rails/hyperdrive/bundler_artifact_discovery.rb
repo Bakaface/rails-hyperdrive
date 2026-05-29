@@ -179,7 +179,7 @@ module Rails
 
       def safe_bundler_specs
         ::Bundler.load.specs.to_a
-      rescue ::Bundler::GemfileNotFound, ::Bundler::BundlerError
+      rescue ::Bundler::BundlerError
         []
       end
     end
