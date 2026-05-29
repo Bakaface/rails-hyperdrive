@@ -5,7 +5,7 @@ module Rails
   module Hyperdrive
     # Discovers skills shipped by 3rd-party gems under the convention:
     #
-    #   <gem-source>/lib/<gem_name>/rails_hyperdrive/skills/<skill_name>/SKILL.md
+    #   <gem-source>/lib/<gem_name>/hyperdrive/skills/<skill_name>/SKILL.md
     #
     # Each SKILL.md must carry YAML frontmatter:
     #   name:        unique skill name
@@ -32,7 +32,7 @@ module Rails
         candidates = []
 
         specs.each do |spec|
-          glob = File.join(spec.full_gem_path, "lib", spec.name, "rails_hyperdrive", "skills", "**", "SKILL.md")
+          glob = File.join(spec.full_gem_path, "lib", spec.name, "hyperdrive", "skills", "**", "SKILL.md")
           Dir.glob(glob).each do |path|
             skill = parse(path, spec: spec)
             candidates << skill if skill

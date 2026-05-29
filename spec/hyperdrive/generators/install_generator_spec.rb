@@ -1,11 +1,11 @@
 require "spec_helper"
 require "rails/generators"
 require "rails/generators/testing/behavior"
-require "generators/rails_hyperdrive/install/install_generator"
+require "generators/hyperdrive/install/install_generator"
 require "fileutils"
 require "tmpdir"
 
-RSpec.describe Rails::Generators::RailsHyperdrive::InstallGenerator do
+RSpec.describe Rails::Generators::Hyperdrive::InstallGenerator do
   include Rails::Generators::Testing::Behavior
   include FileUtils
 
@@ -76,14 +76,14 @@ RSpec.describe Rails::Generators::RailsHyperdrive::InstallGenerator do
     expect(body).to include("/admin/hyperdrive/mcp")
     routes = File.read(File.join(@app_dir, "config/routes.rb"))
     expect(routes).to include("/admin/hyperdrive")
-    initializer = File.join(@app_dir, "config/initializers/rails_hyperdrive.rb")
+    initializer = File.join(@app_dir, "config/initializers/hyperdrive.rb")
     expect(File).to exist(initializer)
     expect(File.read(initializer)).to include('c.mount_at = "/admin/hyperdrive"')
   end
 
   it "does NOT write the initializer when --mount-at is the default" do
     run_generator(["--yes"])
-    expect(File).not_to exist(File.join(@app_dir, "config/initializers/rails_hyperdrive.rb"))
+    expect(File).not_to exist(File.join(@app_dir, "config/initializers/hyperdrive.rb"))
   end
 
   it "refuses to run outside Rails.env.development? (no .mcp.json written)" do

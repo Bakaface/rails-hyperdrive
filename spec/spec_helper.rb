@@ -1,8 +1,8 @@
 require "simplecov"
 SimpleCov.start do
   add_filter "/spec/"
-  add_filter "/lib/rails_hyperdrive/skills/"
-  add_filter "/lib/generators/rails_hyperdrive/install/templates/"
+  add_filter "/lib/rails/hyperdrive/skills/"
+  add_filter "/lib/generators/hyperdrive/install/templates/"
 end
 
 ENV["RAILS_ENV"] ||= "development"
@@ -16,8 +16,8 @@ Combustion.initialize! :active_record
 
 require "rspec/rails"
 require "rack/test"
-require "rails_hyperdrive"
-require "rails_hyperdrive/mcp_server"
+require "rails/hyperdrive"
+require "rails/hyperdrive/mcp_server"
 
 RSpec.configure do |config|
   config.include Rack::Test::Methods

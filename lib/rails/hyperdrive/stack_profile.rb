@@ -155,7 +155,7 @@ module Rails
       # Loaded lazily and rescued broadly so StackProfile stays usable in
       # contexts where Bundler is absent or refuses to resolve.
       def gem_skills_info
-        require "rails_hyperdrive/skill_discovery"
+        require "rails/hyperdrive/skill_discovery"
         ::Rails::Hyperdrive::SkillDiscovery.discover.map do |skill|
           {
             name: skill.name,

@@ -1,4 +1,4 @@
-require "rails_hyperdrive/version"
+require "rails/hyperdrive/version"
 
 module Rails
   module Hyperdrive
@@ -35,4 +35,4 @@ module Rails
   end
 end
 
-require "rails_hyperdrive/engine" if defined?(::Rails::Engine)
+require "rails/hyperdrive/engine" if defined?(::Rails::Engine)

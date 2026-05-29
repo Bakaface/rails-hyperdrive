@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
 require "bundler/setup"
-require "rails_hyperdrive"
+require "rails/hyperdrive"
 require "irb"
 IRB.start(__FILE__)

@@ -65,7 +65,7 @@ FileUtils.mkdir_p(PLAYGROUND_ROOT)
 system("cp", "-a", "#{src}/.", dest) or die("copy failed")
 
 File.open(File.join(dest, "Gemfile"), "a") do |f|
-  f.write(%(gem "rails_hyperdrive", path: #{REPO_ROOT.inspect}\n))
+  f.write(%(gem "rails-hyperdrive", path: #{REPO_ROOT.inspect}\n))
 end
 
 puts "playground: created #{dest}"

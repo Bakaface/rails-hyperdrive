@@ -14,7 +14,7 @@ Built on the official [`mcp` gem](https://github.com/modelcontextprotocol/ruby-s
 
 ```bash
 # 1. Add the dev gem
-$ bundle add rails_hyperdrive --group=development
+$ bundle add rails-hyperdrive --group=development
 
 # 2. Run the generator
 $ bin/rails hyperdrive:init
@@ -78,7 +78,7 @@ $ bin/dev
 A gem ships skills at:
 
 ```
-<gem-source>/lib/<gem_name>/rails_hyperdrive/skills/<skill_name>[-v<major>]/SKILL.md
+<gem-source>/lib/<gem_name>/hyperdrive/skills/<skill_name>[-v<major>]/SKILL.md
 ```
 
 with required YAML frontmatter:

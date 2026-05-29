@@ -18,7 +18,7 @@ module Rails
 
         def call(env)
           unless dev?
-            return forbid("rails_hyperdrive is dev-only (Rails.env=#{rails_env})")
+            return forbid("hyperdrive is dev-only (Rails.env=#{rails_env})")
           end
 
           origin = env["HTTP_ORIGIN"]

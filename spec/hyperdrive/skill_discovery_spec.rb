@@ -1,6 +1,6 @@
 require "spec_helper"
-require "rails_hyperdrive/skill_discovery"
-require "rails_hyperdrive/audit_header"
+require "rails/hyperdrive/skill_discovery"
+require "rails/hyperdrive/audit_header"
 
 RSpec.describe Rails::Hyperdrive::SkillDiscovery do
   let(:fixture_root) { File.expand_path("../fixtures/dummy_gem", __dir__) }
@@ -48,9 +48,9 @@ RSpec.describe Rails::Hyperdrive::SkillDiscovery do
 
     it "injects into existing frontmatter" do
       body = "---\nname: x\n---\n\nbody\n"
-      header = "# rails_hyperdrive: foo=bar"
+      header = "# hyperdrive: foo=bar"
       result = Rails::Hyperdrive::AuditHeader.inject_into_frontmatter(body, header)
-      expect(result).to match(/name: x\n# rails_hyperdrive: foo=bar\n---/)
+      expect(result).to match(/name: x\n# hyperdrive: foo=bar\n---/)
     end
   end
 end

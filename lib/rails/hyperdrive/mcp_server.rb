@@ -47,7 +47,7 @@ module Rails
 
       def build_server
         srv = ::MCP::Server.new(
-          name: "rails_hyperdrive",
+          name: "hyperdrive",
           title: "Rails Hyperdrive",
           version: Rails::Hyperdrive::VERSION,
           instructions: "Rails Hyperdrive MCP server. Prefer locate_source/list_models before guessing.",

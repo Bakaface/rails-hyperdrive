@@ -1,5 +1,5 @@
 require "spec_helper"
-require "rails_hyperdrive/stack_profile"
+require "rails/hyperdrive/stack_profile"
 
 RSpec.describe Rails::Hyperdrive::StackProfile do
   let(:lockfile) { File.expand_path("../fixtures/gemfile_lock/standard.lock", __dir__) }

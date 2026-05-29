@@ -34,11 +34,11 @@ module Smoke
     dest
   end
 
-  # Append `gem "rails_hyperdrive", path: REPO_ROOT` to the Gemfile so the
+  # Append `gem "rails-hyperdrive", path: REPO_ROOT` to the Gemfile so the
   # subprocess resolves against the working tree of this gem.
   def add_path_gem!(app_dir)
     gemfile = File.join(app_dir, "Gemfile")
-    line = %(gem "rails_hyperdrive", path: #{REPO_ROOT.inspect}\n)
+    line = %(gem "rails-hyperdrive", path: #{REPO_ROOT.inspect}\n)
     File.open(gemfile, "a") { |f| f.write(line) }
   end
 

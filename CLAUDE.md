@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-`rails_hyperdrive` is a **dev-only Rails engine gem** that mounts an MCP (Model Context Protocol) server at `/_hyperdrive/mcp` exposing 8 introspection tools for AI coding agents, plus a `hyperdrive:init` generator that installs architecture skills and auto-discovers per-gem skills.
+`rails-hyperdrive` is a **dev-only Rails engine gem** that mounts an MCP (Model Context Protocol) server at `/_hyperdrive/mcp` exposing 8 introspection tools for AI coding agents, plus a `hyperdrive:init` generator that installs architecture skills and auto-discovers per-gem skills.
 
 This is the gem itself, **not** an app that uses it. There is no host Rails app — specs boot a tiny in-memory app via Combustion at `spec/internal/`.
 
@@ -15,10 +15,10 @@ This is the gem itself, **not** an app that uses it. There is no host Rails app 
 ```bash
 bin/setup                                          # bundle install
 bundle exec rspec                                  # full suite (default rake task)
-bundle exec rspec spec/rails_hyperdrive/tools_spec.rb   # single file
+bundle exec rspec spec/hyperdrive/tools_spec.rb   # single file
 bundle exec rspec -e "name fragment"               # filter by example name
 bundle exec rspec --tag smoke                      # opt-in end-to-end smoke (slow; ~60s first run)
-bin/console                                        # IRB with rails_hyperdrive loaded
+bin/console                                        # IRB with hyperdrive loaded
 
 # CI matrix is Ruby {3.2, 3.3, 3.4} × Rails {7.2, 8.0}.
 # Reproduce a specific slot locally:
@@ -31,11 +31,11 @@ Coverage is written to `coverage/` by SimpleCov (configured in `spec/spec_helper
 
 ### Composition root
 
-`lib/rails_hyperdrive/mcp_server.rb` is where everything wires together. It builds a single `MCP::Server` with the 8 tools and 2 resource families, then wraps the `StreamableHTTPTransport` in `Safety::RackMiddleware` and exposes it as a Rack app. The engine's `config/routes.rb` mounts that rack app at `/mcp`. `McpServer.reset!` exists for test isolation — singletons are intentional.
+`lib/rails/hyperdrive/mcp_server.rb` is where everything wires together. It builds a single `MCP::Server` with the 8 tools and 2 resource families, then wraps the `StreamableHTTPTransport` in `Safety::RackMiddleware` and exposes it as a Rack app. The engine's `config/routes.rb` mounts that rack app at `/mcp`. `McpServer.reset!` exists for test isolation — singletons are intentional.
 
 ### Safety model (defense in depth)
 
-Three layers, all keyed off `Rails::Hyperdrive.dev_mode?` (the single source of truth in `lib/rails_hyperdrive.rb`):
+Three layers, all keyed off `Rails::Hyperdrive.dev_mode?` (the single source of truth in `lib/rails/hyperdrive.rb`):
 
 1. **Engine load-time warning** (`engine.rb`) — loads in any env so production boots don't blow up, just logs a warning.
 2. **Rack middleware** (`safety/rack_middleware.rb`) — 403s every request outside `Rails.env.development?` or with an Origin outside the allowlist (`localhost`, `127.0.0.1`, `[::1]`).
@@ -47,19 +47,19 @@ SQL safety (`sql_safety.rb`) is a regex pair: an allowed-leader pattern (`SELECT
 
 ### Shared state between generator and runtime
 
-`StackProfile` (`lib/rails_hyperdrive/stack_profile.rb`) parses `Gemfile.lock` into a categorized stack snapshot. **Both** the `hyperdrive:init` generator (to render `CLAUDE.md`/`.mcp.json`) **and** the `describe_app` MCP tool / `hyperdrive://stack-profile` resource consume it. This is deliberate — installer and running server must not drift on what "this app's stack" means. Gem→category mapping lives in `lib/rails_hyperdrive/data/gem_categories.yml`.
+`StackProfile` (`lib/rails/hyperdrive/stack_profile.rb`) parses `Gemfile.lock` into a categorized stack snapshot. **Both** the `hyperdrive:init` generator (to render `CLAUDE.md`/`.mcp.json`) **and** the `describe_app` MCP tool / `hyperdrive://stack-profile` resource consume it. This is deliberate — installer and running server must not drift on what "this app's stack" means. Gem→category mapping lives in `lib/rails/hyperdrive/data/gem_categories.yml`.
 
 ### 3rd-party skill discovery contract
 
-`SkillDiscovery` (`lib/rails_hyperdrive/skill_discovery.rb`) walks `Bundler.load.specs` looking for `<gem-source>/lib/<gem_name>/rails_hyperdrive/skills/**/SKILL.md` with required YAML frontmatter (`name`, `description`, `gem`, `versions`). It version-matches `versions` (a `Gem::Requirement` string) against the resolved spec and, when multiple variants exist (e.g. `dummy-v1/`, `dummy-v2/`), the **highest spec_version wins per `name:` key**.
+`SkillDiscovery` (`lib/rails/hyperdrive/skill_discovery.rb`) walks `Bundler.load.specs` looking for `<gem-source>/lib/<gem_name>/hyperdrive/skills/**/SKILL.md` with required YAML frontmatter (`name`, `description`, `gem`, `versions`). It version-matches `versions` (a `Gem::Requirement` string) against the resolved spec and, when multiple variants exist (e.g. `dummy-v1/`, `dummy-v2/`), the **highest spec_version wins per `name:` key**.
 
-`AuditHeader` (`lib/rails_hyperdrive/audit_header.rb`) then injects `source=<gem>@<version>`, `sha256=...`, and `installed_at=...` as YAML comments **inside** the skill's frontmatter (so the skill parser still sees a valid schema).
+`AuditHeader` (`lib/rails/hyperdrive/audit_header.rb`) then injects `source=<gem>@<version>`, `sha256=...`, and `installed_at=...` as YAML comments **inside** the skill's frontmatter (so the skill parser still sees a valid schema).
 
 ### Generator
 
-`lib/generators/rails_hyperdrive/install/install_generator.rb` is invoked via `bin/rails hyperdrive:init` (wired by `lib/tasks/hyperdrive.rake`). Public flags: `--yes`, `--mount-at`, `--skip-skills`, `--dry-run` (translated to Thor's `pretend`), `--force-install`. Heuristic defaults look at `app/services`, `app/queries`, `app/forms`. Interactive prompts use `tty-prompt`; non-TTY or `--yes` falls through to the heuristic.
+`lib/generators/hyperdrive/install/install_generator.rb` is invoked via `bin/rails hyperdrive:init` (wired by `lib/tasks/hyperdrive.rake`). Public flags: `--yes`, `--mount-at`, `--skip-skills`, `--dry-run` (translated to Thor's `pretend`), `--force-install`. Heuristic defaults look at `app/services`, `app/queries`, `app/forms`. Interactive prompts use `tty-prompt`; non-TTY or `--yes` falls through to the heuristic.
 
-Bundled architecture skills live at `lib/rails_hyperdrive/skills/{rails-way,service-objects,query-objects,form-objects}/SKILL.md` and are copied to `.claude/skills/<name>/` in the host app.
+Bundled architecture skills live at `lib/rails/hyperdrive/skills/{rails-way,service-objects,query-objects,form-objects}/SKILL.md` and are copied to `.claude/skills/<name>/` in the host app.
 
 ## Test infrastructure
 

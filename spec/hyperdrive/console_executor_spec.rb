@@ -1,5 +1,5 @@
 require "spec_helper"
-require "rails_hyperdrive/console_executor"
+require "rails/hyperdrive/console_executor"
 
 RSpec.describe Rails::Hyperdrive::ConsoleExecutor do
   it "returns the eval result" do

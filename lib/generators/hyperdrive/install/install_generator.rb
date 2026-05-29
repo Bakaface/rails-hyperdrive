@@ -1,13 +1,13 @@
 require "rails/generators"
 require "rails/generators/base"
-require "rails_hyperdrive"
-require "rails_hyperdrive/stack_profile"
-require "rails_hyperdrive/skill_discovery"
-require "rails_hyperdrive/audit_header"
+require "rails/hyperdrive"
+require "rails/hyperdrive/stack_profile"
+require "rails/hyperdrive/skill_discovery"
+require "rails/hyperdrive/audit_header"
 
 module Rails
   module Generators
-    module RailsHyperdrive
+    module Hyperdrive
       # Backs `bin/rails hyperdrive:init`.
       class InstallGenerator < ::Rails::Generators::Base
         SHIPPED_ARCH_SKILLS = %w[rails-way service-objects query-objects form-objects].freeze
@@ -25,12 +25,12 @@ module Rails
         def verify_environment
           unless defined?(::Rails) && ::Rails.respond_to?(:root) && ::Rails.root
             say_status :error, "must be run inside a Rails app", :red
-            raise Thor::Error, "rails_hyperdrive: not in a Rails app"
+            raise Thor::Error, "hyperdrive: not in a Rails app"
           end
           unless ::Rails.respond_to?(:env) && ::Rails.env.development?
             env = ::Rails.respond_to?(:env) ? ::Rails.env.to_s : "unknown"
-            warn "rails_hyperdrive: hyperdrive:init must run with Rails.env=development (current: #{env})"
-            raise Thor::Error, "rails_hyperdrive: refuse to run outside development (Rails.env=#{env})"
+            warn "hyperdrive: hyperdrive:init must run with Rails.env=development (current: #{env})"
+            raise Thor::Error, "hyperdrive: refuse to run outside development (Rails.env=#{env})"
           end
           # Thor's create_file / inject_into_file / template all honor
           # `options[:pretend]`. Translate our user-facing --dry-run to that.
@@ -81,7 +81,7 @@ module Rails
           @selected_arch_skills = @arch_default
         rescue TTY::Reader::InputInterrupt, Interrupt
           say_status :abort, "user aborted; no files written", :red
-          raise Thor::Error, "rails_hyperdrive: aborted by user"
+          raise Thor::Error, "hyperdrive: aborted by user"
         end
 
         def discover_gem_skills
@@ -105,7 +105,7 @@ module Rails
         def write_arch_skills
           return if options[:skip_skills]
           @selected_arch_skills.each do |name|
-            src = File.expand_path("../../../rails_hyperdrive/skills/#{name}/SKILL.md", __dir__)
+            src = File.expand_path("../../../rails/hyperdrive/skills/#{name}/SKILL.md", __dir__)
             dest = ".claude/skills/#{name}/SKILL.md"
             if File.exist?(src)
               create_file_if_changed(dest, File.read(src))
@@ -130,7 +130,7 @@ module Rails
 
         def write_initializer
           return if mount_path == DEFAULT_MOUNT_AT
-          template "initializer.rb.tt", "config/initializers/rails_hyperdrive.rb"
+          template "initializer.rb.tt", "config/initializers/hyperdrive.rb"
         end
 
         def mount_engine
@@ -152,14 +152,14 @@ module Rails
 
         def print_summary
           say ""
-          say_status :done, "rails_hyperdrive initialized", :green
+          say_status :done, "hyperdrive initialized", :green
           say ""
           say "  Files:"
           say "    - .mcp.json"
           say "    - CLAUDE.md" unless options[:skip_skills]
           @selected_arch_skills&.each { |s| say "    - .claude/skills/#{s}/SKILL.md" }
           @discovered_gem_skills&.each { |s| say "    - .claude/skills/#{s.name}/SKILL.md  (#{s.gem} #{s.spec_version})" }
-          say "    - config/initializers/rails_hyperdrive.rb" if mount_path != DEFAULT_MOUNT_AT
+          say "    - config/initializers/hyperdrive.rb" if mount_path != DEFAULT_MOUNT_AT
           say "  Mount: #{mount_path} (in config/routes.rb)"
           say ""
           say "  Next steps:"

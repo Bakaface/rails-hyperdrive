@@ -1,5 +1,5 @@
 require "spec_helper"
-require "rails_hyperdrive/safety/rack_middleware"
+require "rails/hyperdrive/safety/rack_middleware"
 
 RSpec.describe Rails::Hyperdrive::Safety::RackMiddleware do
   let(:inner) { ->(_env) { [200, {}, ["ok"]] } }

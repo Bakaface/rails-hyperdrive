@@ -38,7 +38,7 @@ module Rails
 
         begin
           ::Timeout.timeout(timeout.to_f) do
-            result = TOPLEVEL_BINDING.eval(code, "(rails_hyperdrive run_ruby)", 1)
+            result = TOPLEVEL_BINDING.eval(code, "(hyperdrive run_ruby)", 1)
           end
         rescue Exception => e # rubocop:disable Lint/RescueException
           exception = e

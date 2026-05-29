@@ -1,7 +1,7 @@
 require "json"
 require_relative "smoke_helper"
 
-# Boots a real Rails server with rails_hyperdrive mounted and exercises the
+# Boots a real Rails server with hyperdrive mounted and exercises the
 # MCP endpoint over HTTP. Catches breakage that the in-process Combustion
 # specs miss: middleware order, request streaming transport, real ri lookup.
 RSpec.describe "MCP server smoke", :smoke do

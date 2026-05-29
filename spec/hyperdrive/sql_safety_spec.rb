@@ -1,5 +1,5 @@
 require "spec_helper"
-require "rails_hyperdrive/sql_safety"
+require "rails/hyperdrive/sql_safety"
 
 RSpec.describe Rails::Hyperdrive::SqlSafety do
   describe ".assert_read_only!" do

@@ -26,7 +26,7 @@ module Rails
           # tasks) that bypass it.
           def with_dev_guard
             unless Rails::Hyperdrive.dev_mode?
-              return respond_error("rails_hyperdrive tools are disabled outside Rails.env.development?")
+              return respond_error("hyperdrive tools are disabled outside Rails.env.development?")
             end
             yield
           rescue => e

@@ -1,6 +1,6 @@
 # Security Model
 
-`rails_hyperdrive` is a **development-only** tool. Its security model is designed for a single developer running a Rails app on their own machine — nothing more. Read this before exposing your dev server to a network you don't fully control.
+`rails-hyperdrive` is a **development-only** tool. Its security model is designed for a single developer running a Rails app on their own machine — nothing more. Read this before exposing your dev server to a network you don't fully control.
 
 ## Threat model in one paragraph
 
@@ -10,7 +10,7 @@ Rails Hyperdrive mounts an MCP server that exposes Ruby eval, raw SQL (read-only
 
 All three layers key off `Rails::Hyperdrive.dev_mode?` (which is `Rails.env.development?`).
 
-1. **Engine load-time warning.** The engine loads in any environment so a production process doesn't crash if `rails_hyperdrive` slips into the wrong Bundler group, but it logs a warning at boot when not in development.
+1. **Engine load-time warning.** The engine loads in any environment so a production process doesn't crash if `rails-hyperdrive` slips into the wrong Bundler group, but it logs a warning at boot when not in development.
 
 2. **Rack middleware** (`Rails::Hyperdrive::Safety::RackMiddleware`) sits in front of the MCP transport on every request:
    - Returns `403` when `Rails.env` is not `development`.
@@ -22,7 +22,7 @@ All three layers key off `Rails::Hyperdrive.dev_mode?` (which is `Rails.env.deve
 
 The allowlist blocks DNS-rebinding attacks: an attacker can't trick a victim's browser into POSTing JSON-RPC to `http://localhost:3000/_hyperdrive/mcp` from an attacker-controlled origin, because the browser would attach `Origin: http://evil.example` and we'd 403 it.
 
-It does **not** authenticate anything. Any local process that can speak HTTP to your dev server can call every tool. If you run untrusted code on the same workstation, do not run `rails_hyperdrive`.
+It does **not** authenticate anything. Any local process that can speak HTTP to your dev server can call every tool. If you run untrusted code on the same workstation, do not run `rails-hyperdrive`.
 
 ## What `run_sql` actually is
 
@@ -36,8 +36,8 @@ Rails Hyperdrive does not bind to a network interface — that is Puma's job. Th
 - Do not run `bin/rails server -b 0.0.0.0` on a network you share with untrusted parties.
 - Do not forward port 3000 in Docker / `kubectl port-forward` / `ngrok` / Tailscale / VPN unless you understand who can reach it.
 
-If you must expose the dev server, put it behind your own authenticating proxy and remove `rails_hyperdrive` from the bundle first.
+If you must expose the dev server, put it behind your own authenticating proxy and remove `rails-hyperdrive` from the bundle first.
 
 ## Reporting a vulnerability
 
-Open a GitHub issue describing the impact. Do not include credentials or proprietary code. For sensitive reports, email the gem author listed in `rails_hyperdrive.gemspec`.
+Open a GitHub issue describing the impact. Do not include credentials or proprietary code. For sensitive reports, email the gem author listed in `rails-hyperdrive.gemspec`.

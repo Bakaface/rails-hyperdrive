@@ -44,9 +44,9 @@ RSpec.describe "hyperdrive:init smoke", :smoke do
         expect(status.success?).to be(true), "hyperdrive:init failed:\n#{out}"
 
         # Regression guard for the engine.rake_tasks double-load bug: the
-        # "done  rails_hyperdrive initialized" banner appears once iff the task
+        # "done  hyperdrive initialized" banner appears once iff the task
         # runs once. Two runs would print it twice.
-        expect(out.scan("rails_hyperdrive initialized").length).to eq(1), "hyperdrive:init ran more than once:\n#{out}"
+        expect(out.scan("hyperdrive initialized").length).to eq(1), "hyperdrive:init ran more than once:\n#{out}"
 
         expect(File.exist?(File.join(app_dir, ".mcp.json"))).to be(true)
         expect(File.exist?(File.join(app_dir, "CLAUDE.md"))).to be(true)

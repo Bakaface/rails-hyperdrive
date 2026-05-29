@@ -1,5 +1,5 @@
 require "spec_helper"
-require "rails_hyperdrive/mcp_server"
+require "rails/hyperdrive/mcp_server"
 require "json"
 
 # Exercises each tool through the MCP::Server JSON-RPC entrypoint, matching
