@@ -19,6 +19,7 @@ bundle exec rspec spec/hyperdrive/tools_spec.rb   # single file
 bundle exec rspec -e "name fragment"               # filter by example name
 bundle exec rspec --tag smoke                      # opt-in end-to-end smoke (slow; ~60s first run)
 bin/console                                        # IRB with hyperdrive loaded
+bin/bump patch|minor|major                         # bump the gem version (see Versioning)
 
 # CI matrix is Ruby {3.2, 3.3, 3.4} × Rails {7.2, 8.0}.
 # Reproduce a specific slot locally:
@@ -26,6 +27,20 @@ RAILS_VERSION=7.2 bundle install && RAILS_VERSION=7.2 bundle exec rspec
 ```
 
 Coverage is written to `coverage/` by SimpleCov (configured in `spec/spec_helper.rb`).
+
+## Versioning
+
+The gem follows [Semantic Versioning](https://semver.org). `lib/rails/hyperdrive/version.rb` is the **single source of truth** — `rails-hyperdrive.gemspec` reads `Rails::Hyperdrive::VERSION` from it, as does the `describe_app` MCP tool (`mcp_server.rb`). Never hand-edit the version anywhere else.
+
+Bump with `bin/bump <patch|minor|major|X.Y.Z>` (or `mise run bump <level>`). The script:
+
+1. Rewrites the `VERSION` constant in `version.rb`.
+2. Rolls the `## [Unreleased]` section of `CHANGELOG.md` into a dated `## [X.Y.Z]` section and refreshes the link-reference footer.
+3. Prints the suggested `git commit` + `git tag` commands. Pass `--commit` to make the `chore(release): vX.Y.Z` commit, and `--tag` to also create the annotated `vX.Y.Z` tag. Use `--dry-run` to preview without writing.
+
+Record user-facing changes under `## [Unreleased]` in `CHANGELOG.md` as you go, so a release bump just dates and tags them.
+
+Publishing to RubyGems is tag-triggered (`bin/bump <level> --commit --tag` then push the tag). Do **not** combine `bin/bump --tag` with `rake release` — both create the `vX.Y.Z` tag. Full release runbook is in [`RELEASING.md`](RELEASING.md).
 
 ## Architecture
 
