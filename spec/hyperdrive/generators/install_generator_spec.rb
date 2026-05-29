@@ -101,6 +101,24 @@ RSpec.describe Rails::Generators::Hyperdrive::InstallGenerator do
     end
   end
 
+  # Stage B: the discover cache is the one gitignored artifact; init writes the
+  # rule so the cache never gets committed once `hyperdrive:discover` runs.
+  describe "discover-cache .gitignore rule (Stage B §9)" do
+    it "ignores the specific cache file, not the .hyperdrive/ directory" do
+      run_generator([])
+      lines = File.read(path(".gitignore")).split("\n").map(&:strip)
+      expect(lines).to include(".hyperdrive/discover_cache.json")
+      expect(lines).not_to include(".hyperdrive/", ".hyperdrive")
+    end
+
+    it "is idempotent across re-runs" do
+      run_generator([])
+      run_generator([])
+      occurrences = File.read(path(".gitignore")).scan(".hyperdrive/discover_cache.json").length
+      expect(occurrences).to eq(1)
+    end
+  end
+
   describe "skill install (frontmatter kept, YAML audit header)" do
     before { stub_discovery([skill_artifact(name: "jobs-sidekiq", source: "rails-hyperdrive-sidekiq")]) }
 

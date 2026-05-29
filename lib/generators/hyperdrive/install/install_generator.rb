@@ -8,6 +8,8 @@ require "rails/hyperdrive/stack_document"
 require "rails/hyperdrive/bundler_artifact_discovery"
 require "rails/hyperdrive/audit_header"
 require "rails/hyperdrive/lock_file"
+require "rails/hyperdrive/companion_discovery"
+require "generators/hyperdrive/gitignore_support"
 
 module Rails
   module Generators
@@ -22,6 +24,8 @@ module Rails
       # the index.md aggregator, and injects exactly one `@`-include line into
       # CLAUDE.md.
       class InstallGenerator < ::Rails::Generators::Base
+        include GitignoreSupport
+
         ENGINE_MOUNT_TOKEN = "Rails::Hyperdrive::Engine"
         DEFAULT_MOUNT_AT = "/_hyperdrive".freeze
 
@@ -79,6 +83,14 @@ module Rails
 
         def write_mcp_json
           template "mcp.json.tt", ".mcp.json"
+        end
+
+        # The `hyperdrive:discover` cache (Stage B) is the only gitignored
+        # rails-hyperdrive artifact — the lockfile `.hyperdrive/lock.yml` stays
+        # git-tracked. Ignore the specific file, not the `.hyperdrive/`
+        # directory.
+        def ignore_discover_cache
+          ensure_gitignored(::Rails::Hyperdrive::CompanionDiscovery::CACHE_RELATIVE_PATH)
         end
 
         def write_initializer
