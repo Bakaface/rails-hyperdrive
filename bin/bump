@@ -1,0 +1,135 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Bump the gem version following Semantic Versioning.
+#
+# `lib/rails/hyperdrive/version.rb` is the single source of truth — the gemspec
+# reads `Rails::Hyperdrive::VERSION` from it. This script edits that file, rolls
+# the CHANGELOG's `[Unreleased]` section into a dated, versioned section, and
+# (optionally) creates the release commit and tag.
+#
+# Usage:
+#   bin/bump patch|minor|major        # bump the matching SemVer component
+#   bin/bump 1.4.0                    # set an explicit version
+#   bin/bump patch --dry-run          # show what would change, write nothing
+#   bin/bump minor --commit           # also `git commit` version.rb + CHANGELOG.md
+#   bin/bump minor --commit --tag     # also create an annotated `vX.Y.Z` git tag
+#
+# Without --commit/--tag the script only edits files and prints the suggested
+# git commands, leaving the working tree for you to review.
+
+require "optparse"
+require "date"
+
+REPO_ROOT    = File.expand_path("..", __dir__)
+VERSION_FILE = File.join(REPO_ROOT, "lib/rails/hyperdrive/version.rb")
+CHANGELOG    = File.join(REPO_ROOT, "CHANGELOG.md")
+VERSION_RE   = /VERSION\s*=\s*"(\d+)\.(\d+)\.(\d+)"/
+
+options = { dry_run: false, commit: false, tag: false }
+
+parser = OptionParser.new do |opts|
+  opts.banner = "Usage: bin/bump <patch|minor|major|X.Y.Z> [options]"
+  opts.on("--dry-run", "Show changes without writing files") { options[:dry_run] = true }
+  opts.on("--commit", "Create a release commit after bumping") { options[:commit] = true }
+  opts.on("--tag", "Create an annotated vX.Y.Z tag (implies --commit)") do
+    options[:tag] = true
+    options[:commit] = true
+  end
+  opts.on("-h", "--help", "Show this help") do
+    puts opts
+    exit
+  end
+end
+parser.parse!
+
+target = ARGV.shift
+unless target
+  warn parser.banner
+  exit 1
+end
+
+source = File.read(VERSION_FILE)
+match = source.match(VERSION_RE)
+abort "Could not find VERSION in #{VERSION_FILE}" unless match
+
+major, minor, patch = match.captures.map(&:to_i)
+current = "#{major}.#{minor}.#{patch}"
+
+new_version =
+  case target
+  when "major" then "#{major + 1}.0.0"
+  when "minor" then "#{major}.#{minor + 1}.0"
+  when "patch" then "#{major}.#{minor}.#{patch + 1}"
+  when /\A\d+\.\d+\.\d+\z/ then target
+  else abort "Invalid bump: #{target.inspect} (expected patch|minor|major|X.Y.Z)"
+  end
+
+abort "New version #{new_version} is not greater than current #{current}" if new_version == current
+
+puts "Bumping #{current} -> #{new_version}"
+
+# --- version.rb ---------------------------------------------------------------
+new_source = source.sub(VERSION_RE, %(VERSION = "#{new_version}"))
+
+# --- CHANGELOG.md -------------------------------------------------------------
+changelog = File.exist?(CHANGELOG) ? File.read(CHANGELOG) : nil
+new_changelog = changelog&.dup
+
+if changelog
+  today = Date.today.iso8601
+  if changelog.include?("## [Unreleased]")
+    # Insert a fresh empty Unreleased section above the newly dated release.
+    new_changelog = changelog.sub(
+      "## [Unreleased]",
+      "## [Unreleased]\n\n## [#{new_version}] - #{today}"
+    )
+    # Refresh the link-reference footer if present.
+    new_changelog = new_changelog
+      .gsub(%r{\[Unreleased\]:.*compare/v[\d.]+\.\.\.HEAD},
+            "[Unreleased]: https://github.com/Bakaface/rails-hyperdrive/compare/v#{new_version}...HEAD")
+      .sub(/(\[Unreleased\]:[^\n]*\n)/,
+           "\\1[#{new_version}]: https://github.com/Bakaface/rails-hyperdrive/releases/tag/v#{new_version}\n")
+  else
+    warn "CHANGELOG.md has no '## [Unreleased]' section; skipping changelog update."
+    new_changelog = changelog
+  end
+else
+  warn "No CHANGELOG.md found; skipping changelog update."
+end
+
+if options[:dry_run]
+  puts "\n--- DRY RUN (no files written) ---"
+  puts "#{VERSION_FILE}: VERSION = \"#{new_version}\""
+  puts "#{CHANGELOG}: new section '## [#{new_version}] - #{Date.today.iso8601}'" if changelog
+  exit
+end
+
+File.write(VERSION_FILE, new_source)
+puts "Updated #{VERSION_FILE}"
+
+if new_changelog && new_changelog != changelog
+  File.write(CHANGELOG, new_changelog)
+  puts "Updated #{CHANGELOG}"
+end
+
+if options[:commit]
+  files = [VERSION_FILE]
+  files << CHANGELOG if changelog
+  system("git", "-C", REPO_ROOT, "add", *files) || abort("git add failed")
+  system("git", "-C", REPO_ROOT, "commit", "-m", "chore(release): v#{new_version}") || abort("git commit failed")
+  puts "Created release commit for v#{new_version}"
+
+  if options[:tag]
+    system("git", "-C", REPO_ROOT, "tag", "-a", "v#{new_version}", "-m", "v#{new_version}") || abort("git tag failed")
+    puts "Created tag v#{new_version}"
+    puts "\nPush to publish (tag push triggers the Release workflow):"
+    puts "  git push origin main --follow-tags"
+  end
+else
+  puts "\nNext steps (or re-run with --commit --tag to do the first three):"
+  puts "  git add lib/rails/hyperdrive/version.rb CHANGELOG.md"
+  puts "  git commit -m \"chore(release): v#{new_version}\""
+  puts "  git tag -a v#{new_version} -m \"v#{new_version}\""
+  puts "  git push origin main --follow-tags   # tag push triggers the Release workflow"
+end

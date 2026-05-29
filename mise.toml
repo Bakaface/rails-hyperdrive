@@ -17,6 +17,13 @@ run = "bundle exec rspec"
 description = "Run end-to-end smoke specs (opt-in; ~60s first run)"
 run = "bundle exec rspec --tag smoke"
 
+[tasks.bump]
+description = "Bump the gem version (patch|minor|major|X.Y.Z); rolls CHANGELOG + prints git steps"
+usage = '''
+arg "<level>" help="SemVer component to bump (patch, minor, major) or an explicit X.Y.Z version"
+'''
+run = "bin/bump $usage_level"
+
 [tasks.playground]
 alias = "pg"
 description = "Materialize a smoke fixture under playground/<variant>/ and run hyperdrive:init"
