@@ -7,7 +7,7 @@ require "tmpdir"
 require "uri"
 
 # Smoke helper — shared utilities for end-to-end tests that exercise the
-# `boost:init` CLI and the `/_boost/mcp` HTTP endpoint against a real Rails
+# `hyperdrive:init` CLI and the `/_hyperdrive/mcp` HTTP endpoint against a real Rails
 # app subprocess.
 #
 # Smoke specs are tagged `:smoke` and excluded by default; run with
@@ -34,11 +34,11 @@ module Smoke
     dest
   end
 
-  # Append `gem "rails_boost", path: REPO_ROOT` to the Gemfile so the
+  # Append `gem "rails_hyperdrive", path: REPO_ROOT` to the Gemfile so the
   # subprocess resolves against the working tree of this gem.
   def add_path_gem!(app_dir)
     gemfile = File.join(app_dir, "Gemfile")
-    line = %(gem "rails_boost", path: #{REPO_ROOT.inspect}\n)
+    line = %(gem "rails_hyperdrive", path: #{REPO_ROOT.inspect}\n)
     File.open(gemfile, "a") { |f| f.write(line) }
   end
 
@@ -57,14 +57,14 @@ module Smoke
     end
   end
 
-  # Run `bin/rails boost:init` against the app. The `--` separator is
+  # Run `bin/rails hyperdrive:init` against the app. The `--` separator is
   # required because Rails' command runner parses `--flag` itself unless
   # told to stop. Returns [stdout_plus_stderr, status].
-  def run_boost_init!(app_dir, *flags)
+  def run_hyperdrive_init!(app_dir, *flags)
     Bundler.with_unbundled_env do
       Open3.capture2e(
         env_for(app_dir),
-        "bundle", "exec", "bin/rails", "boost:init", "--", *flags,
+        "bundle", "exec", "bin/rails", "hyperdrive:init", "--", *flags,
         chdir: app_dir
       )
     end
@@ -102,7 +102,7 @@ module Smoke
 
   # JSON-RPC POST to the MCP endpoint. Returns the parsed result, or raises
   # with the error payload.
-  def mcp_call(port, method, params = {}, mount: "/_boost")
+  def mcp_call(port, method, params = {}, mount: "/_hyperdrive")
     uri = URI("http://127.0.0.1:#{port}#{mount}/mcp")
     req = Net::HTTP::Post.new(uri)
     req["Content-Type"] = "application/json"

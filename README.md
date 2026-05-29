@@ -1,10 +1,10 @@
-# Rails Boost
+# Rails Hyperdrive
 
 > Dev-only Rails engine that bootstraps an MCP server + architecture skills for AI coding agents (Claude Code first).
 
-Rails Boost mounts an [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server at `http://localhost:3000/_boost/mcp` in development, exposing **8 introspection tools** so AI agents stop guessing — they can eval Ruby, query the DB (read-only), tail logs, list models and routes, locate source, fetch docs, and snapshot the stack.
+Rails Hyperdrive mounts an [MCP (Model Context Protocol)](https://modelcontextprotocol.io) server at `http://localhost:3000/_hyperdrive/mcp` in development, exposing **8 introspection tools** so AI agents stop guessing — they can eval Ruby, query the DB (read-only), tail logs, list models and routes, locate source, fetch docs, and snapshot the stack.
 
-It also ships a `boost:init` generator that installs **architecture skills** (Rails Way, Service Objects, Query Objects, Form Objects) and auto-discovers **per-gem skills** that 3rd-party gems ship under a documented convention.
+It also ships a `hyperdrive:init` generator that installs **architecture skills** (Rails Way, Service Objects, Query Objects, Form Objects) and auto-discovers **per-gem skills** that 3rd-party gems ship under a documented convention.
 
 Built on the official [`mcp` gem](https://github.com/modelcontextprotocol/ruby-sdk). MIT-licensed.
 
@@ -14,10 +14,10 @@ Built on the official [`mcp` gem](https://github.com/modelcontextprotocol/ruby-s
 
 ```bash
 # 1. Add the dev gem
-$ bundle add rails_boost --group=development
+$ bundle add rails_hyperdrive --group=development
 
 # 2. Run the generator
-$ bin/rails boost:init
+$ bin/rails hyperdrive:init
 
   detected: Rails 8.0.1, Ruby 3.3.6, Postgres, RSpec, Sidekiq, Hotwire
   detected gem-shipped skills: sidekiq (1), devise (1), pundit (1)
@@ -35,7 +35,7 @@ $ bin/rails boost:init
   wrote .claude/skills/sidekiq-jobs/SKILL.md           (from sidekiq 7.3.4)
   wrote .claude/skills/devise-auth/SKILL.md            (from devise 4.9.4)
   wrote .claude/skills/pundit-authz/SKILL.md           (from pundit 2.4.0)
-  mounted Rails::Boost::Engine at /_boost in config/routes.rb
+  mounted Rails::Hyperdrive::Engine at /_hyperdrive in config/routes.rb
 
   done.
 
@@ -43,7 +43,7 @@ $ bin/rails boost:init
 $ bin/dev
 
 # 4. Open Claude Code in the project directory
-# → Claude Code reads .mcp.json, connects to http://localhost:3000/_boost/mcp
+# → Claude Code reads .mcp.json, connects to http://localhost:3000/_hyperdrive/mcp
 # → agent has 8 tools + the installed skills + the stack-aware CLAUDE.md
 ```
 
@@ -66,8 +66,8 @@ $ bin/dev
 
 ### Resources
 
-- `boost://stack-profile` — JSON of the resolved `StackProfile`
-- `boost://skills/{name}` — markdown body of each installed skill
+- `hyperdrive://stack-profile` — JSON of the resolved `StackProfile`
+- `hyperdrive://skills/{name}` — markdown body of each installed skill
 
 ### Architecture skills
 
@@ -78,7 +78,7 @@ $ bin/dev
 A gem ships skills at:
 
 ```
-<gem-source>/lib/<gem_name>/rails_boost/skills/<skill_name>[-v<major>]/SKILL.md
+<gem-source>/lib/<gem_name>/rails_hyperdrive/skills/<skill_name>[-v<major>]/SKILL.md
 ```
 
 with required YAML frontmatter:
@@ -93,13 +93,13 @@ category: jobs
 ---
 ```
 
-`boost:init` discovers all such files, version-matches each against the gem in the lockfile, installs the winner with an audit header naming `source`, `version`, `sha256`, and `installed_at`.
+`hyperdrive:init` discovers all such files, version-matches each against the gem in the lockfile, installs the winner with an audit header naming `source`, `version`, `sha256`, and `installed_at`.
 
 ---
 
 ## Safety
 
-Rails Boost is **dev-only**. The engine refuses to handle requests outside `Rails.env.development?` and enforces an origin allowlist (`localhost`, `127.0.0.1`). See [SECURITY.md](SECURITY.md).
+Rails Hyperdrive is **dev-only**. The engine refuses to handle requests outside `Rails.env.development?` and enforces an origin allowlist (`localhost`, `127.0.0.1`). See [SECURITY.md](SECURITY.md).
 
 ---
 

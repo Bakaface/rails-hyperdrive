@@ -1,8 +1,8 @@
 require "simplecov"
 SimpleCov.start do
   add_filter "/spec/"
-  add_filter "/lib/rails_boost/skills/"
-  add_filter "/lib/generators/rails_boost/install/templates/"
+  add_filter "/lib/rails_hyperdrive/skills/"
+  add_filter "/lib/generators/rails_hyperdrive/install/templates/"
 end
 
 ENV["RAILS_ENV"] ||= "development"
@@ -16,8 +16,8 @@ Combustion.initialize! :active_record
 
 require "rspec/rails"
 require "rack/test"
-require "rails_boost"
-require "rails_boost/mcp_server"
+require "rails_hyperdrive"
+require "rails_hyperdrive/mcp_server"
 
 RSpec.configure do |config|
   config.include Rack::Test::Methods
@@ -26,7 +26,7 @@ RSpec.configure do |config|
   end
 
   config.before(:each) do
-    ::Rails::Boost::StackProfile.reset! if ::Rails::Boost::StackProfile.respond_to?(:reset!)
-    ::Rails::Boost::McpServer.reset!
+    ::Rails::Hyperdrive::StackProfile.reset! if ::Rails::Hyperdrive::StackProfile.respond_to?(:reset!)
+    ::Rails::Hyperdrive::McpServer.reset!
   end
 end

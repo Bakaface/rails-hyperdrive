@@ -3,11 +3,11 @@
 
 # Materialize one of the smoke fixtures into a gitignored `playground/<variant>/`
 # directory, wire it to this gem via `path:`, run `bundle install`, and run
-# `bin/rails boost:init` — leaving a ready-to-poke-at app for manual testing
+# `bin/rails hyperdrive:init` — leaving a ready-to-poke-at app for manual testing
 # (Claude Code, MCP server, generator output).
 #
 # Usage:
-#   bin/playground <variant> [--force] [--no-init] [--boost-flag FLAG ...]
+#   bin/playground <variant> [--force] [--no-init] [--hyperdrive-flag FLAG ...]
 #
 # Variants are the directory names under spec/fixtures/smoke_apps/.
 
@@ -30,7 +30,7 @@ end
 
 force = false
 run_init = true
-extra_boost_flags = []
+extra_hyperdrive_flags = []
 
 parser = OptionParser.new do |o|
   o.banner = <<~BANNER
@@ -42,8 +42,8 @@ parser = OptionParser.new do |o|
     Options:
   BANNER
   o.on("-f", "--force", "Overwrite existing playground/<variant>") { force = true }
-  o.on("--no-init", "Skip running bin/rails boost:init") { run_init = false }
-  o.on("--boost-flag FLAG", "Extra flag passed through to boost:init (repeatable)") { |f| extra_boost_flags << f }
+  o.on("--no-init", "Skip running bin/rails hyperdrive:init") { run_init = false }
+  o.on("--hyperdrive-flag FLAG", "Extra flag passed through to hyperdrive:init (repeatable)") { |f| extra_hyperdrive_flags << f }
   o.on("-h", "--help") { puts o; exit 0 }
 end
 
@@ -65,7 +65,7 @@ FileUtils.mkdir_p(PLAYGROUND_ROOT)
 system("cp", "-a", "#{src}/.", dest) or die("copy failed")
 
 File.open(File.join(dest, "Gemfile"), "a") do |f|
-  f.write(%(gem "rails_boost", path: #{REPO_ROOT.inspect}\n))
+  f.write(%(gem "rails_hyperdrive", path: #{REPO_ROOT.inspect}\n))
 end
 
 puts "playground: created #{dest}"
@@ -85,10 +85,10 @@ Dir.chdir(dest) do
   system(child_env, "bundle", "install") or die("bundle install failed")
 
   if run_init
-    boost_flags = ["--yes", *extra_boost_flags]
-    puts "playground: bin/rails boost:init #{boost_flags.join(" ")}"
+    hyperdrive_flags = ["--yes", *extra_hyperdrive_flags]
+    puts "playground: bin/rails hyperdrive:init #{hyperdrive_flags.join(" ")}"
     # `--` separator stops Rails' own command runner from eating our flags.
-    system(child_env, "bundle", "exec", "bin/rails", "boost:init", "--", *boost_flags) or die("boost:init failed")
+    system(child_env, "bundle", "exec", "bin/rails", "hyperdrive:init", "--", *hyperdrive_flags) or die("hyperdrive:init failed")
   end
 end
 
@@ -96,4 +96,4 @@ rel = File.join("playground", variant)
 puts
 puts "playground ready at #{rel}"
 puts "  cd #{rel}"
-puts "  bundle exec bin/rails server   # serves MCP at /_boost/mcp"
+puts "  bundle exec bin/rails server   # serves MCP at /_hyperdrive/mcp"

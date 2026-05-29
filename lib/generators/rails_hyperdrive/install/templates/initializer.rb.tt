@@ -1,0 +1,3 @@
+Rails::Hyperdrive.configure do |c|
+  c.mount_at = "<%= mount_path %>"
+end

@@ -1,1 +1,0 @@
-  mount Rails::Boost::Engine => "<%= mount_path %>" if Rails.env.development?

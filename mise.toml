@@ -19,7 +19,7 @@ run = "bundle exec rspec --tag smoke"
 
 [tasks.playground]
 alias = "pg"
-description = "Materialize a smoke fixture under playground/<variant>/ and run boost:init"
+description = "Materialize a smoke fixture under playground/<variant>/ and run hyperdrive:init"
 usage = '''
 arg "<variant>" help="Fixture name from spec/fixtures/smoke_apps/ (minimal, services, full_stack)"
 '''

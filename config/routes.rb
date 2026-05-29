@@ -1,5 +1,5 @@
-require "rails_boost/mcp_server"
+require "rails_hyperdrive/mcp_server"
 
-Rails::Boost::Engine.routes.draw do
-  mount Rails::Boost::McpServer.rack_app => "/mcp", as: :mcp
+Rails::Hyperdrive::Engine.routes.draw do
+  mount Rails::Hyperdrive::McpServer.rack_app => "/mcp", as: :mcp
 end

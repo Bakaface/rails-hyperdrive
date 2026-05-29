@@ -1,0 +1,14 @@
+Description:
+    Bootstraps Rails Hyperdrive in this app:
+      - writes .mcp.json (Claude Code config)
+      - writes CLAUDE.md (top-level instructions, references skills + StackProfile)
+      - installs selected architecture skills into .claude/skills/
+      - discovers and installs 3rd-party gem-shipped skills (with audit headers)
+      - mounts Rails::Hyperdrive::Engine at /_hyperdrive in config/routes.rb (idempotent)
+
+Examples:
+    bin/rails hyperdrive:init
+    bin/rails hyperdrive:init --yes
+    bin/rails hyperdrive:init --mount-at /admin/hyperdrive
+    bin/rails hyperdrive:init --skip-skills
+    bin/rails hyperdrive:init --dry-run

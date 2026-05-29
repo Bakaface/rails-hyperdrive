@@ -1,7 +1,7 @@
 require "json"
 require_relative "smoke_helper"
 
-# Boots a real Rails server with rails_boost mounted and exercises the
+# Boots a real Rails server with rails_hyperdrive mounted and exercises the
 # MCP endpoint over HTTP. Catches breakage that the in-process Combustion
 # specs miss: middleware order, request streaming transport, real ri lookup.
 RSpec.describe "MCP server smoke", :smoke do
@@ -10,7 +10,7 @@ RSpec.describe "MCP server smoke", :smoke do
   around do |ex|
     Smoke.add_path_gem!(app_dir)
     Smoke.bundle_install!(app_dir)
-    Smoke.run_boost_init!(app_dir, "--yes")
+    Smoke.run_hyperdrive_init!(app_dir, "--yes")
     pid, port = Smoke.boot_server!(app_dir)
     @port = port
     begin
