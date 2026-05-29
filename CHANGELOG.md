@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-05-29
+
 ### Added
 
 - `hyperdrive:discover` — read-only, networked command that suggests uninstalled
@@ -27,5 +29,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `hyperdrive:init` generator that installs architecture skills and auto-discovers
   per-gem skills.
 
-[Unreleased]: https://github.com/Bakaface/rails-hyperdrive/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Bakaface/rails-hyperdrive/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Bakaface/rails-hyperdrive/releases/tag/v0.2.0
 [0.1.0]: https://github.com/Bakaface/rails-hyperdrive/releases/tag/v0.1.0
