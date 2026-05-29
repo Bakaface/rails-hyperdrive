@@ -61,9 +61,9 @@ Run `hyperdrive:discover` to find companion gems published for your stack that y
 |---|------|---------|
 | 1 | `run_ruby` | Eval Ruby in the booted Rails process, with timeout + output capture |
 | 2 | `run_sql` | Read-only SQL via the AR connection (refuses non-SELECT) |
-| 3 | `tail_logs` | Tail recent lines from `log/development.log` |
+| 3 | `tail_logs` | Tail the last N lines of a log under `log/` (defaults to `log/<env>.log`) |
 | 4 | `list_models` | List Active Record model classes with columns/validations/associations |
-| 5 | `locate_source` | Resolve `Const#method` / `Const.method` / `dep:<gem>` to a file:line |
+| 5 | `locate_source` | Resolve `Const` / `Const#method` / `Const.method` / `dep:<gem>` to a file:line |
 | 6 | `lookup_doc` | Look up RDoc for a symbol (via `ri`) |
 | 7 | `describe_app` | Snapshot: Rails/Ruby/DB versions + full `StackProfile` |
 | 8 | `list_routes` | All routes: HTTP verb, path, controller#action, named route |
@@ -124,7 +124,7 @@ spec.metadata["hyperdrive_artifacts"] = "guideline,skill"  # optional; presentat
 
 ## Safety
 
-Rails Hyperdrive is **dev-only**. The engine refuses to handle requests outside `Rails.env.development?` and enforces an origin allowlist (`localhost`, `127.0.0.1`). See [SECURITY.md](SECURITY.md).
+Rails Hyperdrive is **dev-only**. The engine refuses to handle requests outside `Rails.env.development?` and enforces an origin allowlist (`localhost`, `127.0.0.1`, `[::1]`). See [SECURITY.md](SECURITY.md).
 
 ---
 
