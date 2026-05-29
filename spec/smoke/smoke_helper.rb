@@ -70,6 +70,19 @@ module Smoke
     end
   end
 
+  # Run `bin/rails hyperdrive:discover` against the app. Same `--` plumbing
+  # as init. Returns [stdout_plus_stderr, status]. Read-only and networked —
+  # the command never raises, so a non-success status is itself a failure.
+  def run_hyperdrive_discover!(app_dir, *flags)
+    Bundler.with_unbundled_env do
+      Open3.capture2e(
+        env_for(app_dir),
+        "bundle", "exec", "bin/rails", "hyperdrive:discover", "--", *flags,
+        chdir: app_dir
+      )
+    end
+  end
+
   # Boot `bin/rails server` in the background on a random port. Returns
   # [pid, port]. Caller is responsible for killing the pid via stop_server!.
   def boot_server!(app_dir)
