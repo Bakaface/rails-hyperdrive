@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `hyperdrive:discover` — read-only, networked command that suggests uninstalled
+  `rails-hyperdrive-*` companion gems for the app's stack. Queries the rubygems
+  search API, matches each companion's declared `hyperdrive_targets` against
+  `Gemfile.lock`, and prints the `bundle add` lines to run. Results cache to
+  `.hyperdrive/discover_cache.json` (24h TTL; `--refresh` busts it); offline or
+  rate-limited runs fall back to a stale cache or report "unavailable" without
+  failing. Ships dormant — returns nothing until companion gems exist on rubygems.
+- `hyperdrive:init` now adds a `.gitignore` rule for the discover cache.
+
 ## [0.1.0] - 2026-05-29
 
 ### Added

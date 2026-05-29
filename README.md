@@ -49,6 +49,8 @@ $ bin/dev
 
 Re-run `hyperdrive:init` any time to re-sync; it leaves locally-modified files untouched (skip + warn). Run `hyperdrive:update` to force-overwrite them.
 
+Run `hyperdrive:discover` to find companion gems published for your stack that you haven't installed yet — it queries rubygems (read-only, results cached for 24h; `--refresh` re-queries) and prints the `bundle add` lines to run, then re-run `hyperdrive:init`. It never touches your Gemfile or makes network calls unless you invoke it.
+
 ---
 
 ## What ships
@@ -108,6 +110,15 @@ versions: ">= 7.0, < 9.0"         # Gem::Requirement matched against the target 
 ```
 
 `gem:` is the **target** (must be present in the bundle; its resolved version is matched against `versions:`). Use `railties` for "every Rails app" or the quoted `"*"` for "always applicable" (it must be quoted — bare `*` is a YAML alias and the file is skipped). `hyperdrive:init` discovers every such file across the bundle, version-matches it, and installs it with an audit header naming `source`, `sha256`, and `installed_at`. Guidelines are installed with their frontmatter stripped (they are `@`-included eagerly). When two gems ship a same-named artifact, both install, each postfixed by source gem.
+
+To be discoverable by `hyperdrive:discover` **before** it is installed, a companion also declares gemspec metadata (read remotely from rubygems, so the frontmatter inside the gem isn't visible yet):
+
+```ruby
+spec.metadata["hyperdrive_targets"]   = "sidekiq"          # required; comma-sep, or "*" for always-applicable
+spec.metadata["hyperdrive_artifacts"] = "guideline,skill"  # optional; presentational hint
+```
+
+`hyperdrive_targets` is a coarse pre-install hint — it is never reconciled against the frontmatter `gem:`; once the gem is bundled, the frontmatter alone governs what installs.
 
 ---
 
