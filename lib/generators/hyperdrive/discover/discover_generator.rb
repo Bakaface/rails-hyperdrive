@@ -7,7 +7,7 @@ require "generators/hyperdrive/gitignore_support"
 module Rails
   module Generators
     module Hyperdrive
-      # Backs `bin/rails hyperdrive:discover` (Stage B).
+      # Backs `bin/rails hyperdrive:discover`.
       #
       # Read-only and networked: queries rubygems for `rails-hyperdrive-*`
       # companions, matches their declared targets against this app's

@@ -101,9 +101,9 @@ RSpec.describe Rails::Generators::Hyperdrive::InstallGenerator do
     end
   end
 
-  # Stage B: the discover cache is the one gitignored artifact; init writes the
+  # The discover cache is the one gitignored artifact; init writes the
   # rule so the cache never gets committed once `hyperdrive:discover` runs.
-  describe "discover-cache .gitignore rule (Stage B §9)" do
+  describe "discover-cache .gitignore rule" do
     it "ignores the specific cache file, not the .hyperdrive/ directory" do
       run_generator([])
       lines = File.read(path(".gitignore")).split("\n").map(&:strip)

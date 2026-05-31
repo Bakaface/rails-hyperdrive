@@ -85,7 +85,7 @@ module Rails
           template "mcp.json.tt", ".mcp.json"
         end
 
-        # The `hyperdrive:discover` cache (Stage B) is the only gitignored
+        # The `hyperdrive:discover` cache is the only gitignored
         # rails-hyperdrive artifact — the lockfile `.hyperdrive/lock.yml` stays
         # git-tracked. Ignore the specific file, not the `.hyperdrive/`
         # directory.

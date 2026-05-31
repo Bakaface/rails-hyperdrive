@@ -13,8 +13,6 @@ Gem::Specification.new do |spec|
   spec.files       = Dir["lib/**/*"]
   spec.require_paths = ["lib"]
 
-  # Stage-B discover hints (read from rubygems metadata pre-install). Separate
-  # surface from the per-artifact frontmatter `gem:` the installer uses.
   spec.metadata["hyperdrive_targets"]   = "railties"
   spec.metadata["hyperdrive_artifacts"] = "skill,guideline"
 end

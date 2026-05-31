@@ -9,7 +9,7 @@ require "bundler"
 
 module Rails
   module Hyperdrive
-    # Stage B: read-only, networked discovery of *uninstalled* companion gems.
+    # Read-only, networked discovery of *uninstalled* companion gems.
     #
     # Queries the rubygems search API for gems under the `rails-hyperdrive-`
     # prefix, reads their pre-install discovery metadata (`hyperdrive_targets` /
