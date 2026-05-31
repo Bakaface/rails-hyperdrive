@@ -16,9 +16,6 @@ require_relative "smoke_helper"
 #   3. Cross-source collision   — two gems shipping a same-named skill install
 #                                 both, postfixed by source gem.
 RSpec.describe "hyperdrive companion install smoke", :smoke do
-  # ---------------------------------------------------------------------------
-  # Gap 1 — full companion install end-to-end.
-  # ---------------------------------------------------------------------------
   describe "installing a single companion gem" do
     let(:app_dir) { Smoke.copy_fixture("minimal") }
 
@@ -65,8 +62,9 @@ RSpec.describe "hyperdrive companion install smoke", :smoke do
       expect(lock).to include(".claude/hyperdrive/guidelines/alpha-guide.md")
       expect(lock).to include("rails-hyperdrive-alpha@0.1.0")
 
-      # --- eager footprint reflects exactly one guideline + stack.md.
-      expect(out).to match(/1 guideline\(s\) \+ stack\.md/)
+      # --- eager footprint: exactly one guideline + stack.md, reported with a
+      #     positive "~N tokens always in context" estimate.
+      expect(out).to match(/1 guideline\(s\) \+ stack\.md, ~[1-9]\d* tokens always in context/)
 
       # --- Idempotency: a second init touches nothing and never duplicates.
       out2, status2 = Smoke.run_hyperdrive_init!(app_dir)
@@ -78,9 +76,6 @@ RSpec.describe "hyperdrive companion install smoke", :smoke do
     end
   end
 
-  # ---------------------------------------------------------------------------
-  # Gap 2 — hyperdrive:update force-overwrites a locally-modified file.
-  # ---------------------------------------------------------------------------
   describe "hyperdrive:update vs a locally-modified file" do
     let(:app_dir) { Smoke.copy_fixture("minimal") }
     let(:guide_path) { File.join(app_dir, ".claude/hyperdrive/guidelines/alpha-guide.md") }
@@ -114,9 +109,6 @@ RSpec.describe "hyperdrive companion install smoke", :smoke do
     end
   end
 
-  # ---------------------------------------------------------------------------
-  # Gap 3 — cross-source skill collision installs both, postfixed.
-  # ---------------------------------------------------------------------------
   describe "cross-source skill collision" do
     let(:app_dir) { Smoke.copy_fixture("minimal") }
 
@@ -157,7 +149,7 @@ RSpec.describe "hyperdrive companion install smoke", :smoke do
       index = File.read(File.join(app_dir, ".claude/hyperdrive/index.md"))
       expect(index).to include("@guidelines/alpha-guide.md")
       expect(index).to include("@guidelines/beta-guide.md")
-      expect(out).to match(/2 guideline\(s\) \+ stack\.md/)
+      expect(out).to match(/2 guideline\(s\) \+ stack\.md, ~[1-9]\d* tokens always in context/)
 
       # Idempotency holds despite the name-rewrite (strip round-trips exactly).
       # The conflict line reprints (the collision is structural), but the
