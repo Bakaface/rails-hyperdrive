@@ -1,0 +1,15 @@
+---
+name: alpha-skill
+description: A smoke-fixture skill shipped by rails-hyperdrive-alpha.
+gem: railties
+versions: ">= 7.0"
+---
+
+# Alpha Skill
+
+This is a lazy, model-invoked skill installed end-to-end by the smoke suite.
+
+## Steps
+
+1. Do the alpha thing.
+2. Verify it worked.

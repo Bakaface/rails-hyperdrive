@@ -15,6 +15,9 @@ require "uri"
 module Smoke
   REPO_ROOT = File.expand_path("../..", __dir__).freeze
   FIXTURES_ROOT = File.join(REPO_ROOT, "spec/fixtures/smoke_apps").freeze
+  # Fixture-only companion gems (real path gems, each shipping hyperdrive
+  # skills/guidelines) used to exercise the install pipeline end-to-end.
+  COMPANIONS_ROOT = File.join(REPO_ROOT, "spec/fixtures/smoke_companions").freeze
   TMP_ROOT = File.join(REPO_ROOT, "spec/tmp/smoke").freeze
   # Shared bundle cache across scenarios so only the first install pays the
   # full network cost; subsequent scenarios reuse the resolved gems.
@@ -42,6 +45,18 @@ module Smoke
     File.open(gemfile, "a") { |f| f.write(line) }
   end
 
+  # Append a fixture companion gem (e.g. "rails-hyperdrive-alpha") as a path
+  # gem so the subprocess bundle resolves it and the installer discovers its
+  # shipped skills/guidelines.
+  def add_companion_gem!(app_dir, gem_name)
+    path = File.join(COMPANIONS_ROOT, gem_name)
+    raise "unknown companion: #{gem_name}" unless Dir.exist?(path)
+
+    gemfile = File.join(app_dir, "Gemfile")
+    line = %(gem #{gem_name.inspect}, path: #{path.inspect}\n)
+    File.open(gemfile, "a") { |f| f.write(line) }
+  end
+
   # Run `bundle install` against the app, sharing BUNDLE_PATH across calls.
   # Bundler.with_unbundled_env scrubs parent-process bundler vars so the
   # subprocess resolves the app's own Gemfile.
@@ -65,6 +80,19 @@ module Smoke
       Open3.capture2e(
         env_for(app_dir),
         "bundle", "exec", "bin/rails", "hyperdrive:init", "--", *flags,
+        chdir: app_dir
+      )
+    end
+  end
+
+  # Run `bin/rails hyperdrive:update` against the app — same pipeline as init
+  # but force-overwrites locally-modified files. Returns [stdout_plus_stderr,
+  # status].
+  def run_hyperdrive_update!(app_dir, *flags)
+    Bundler.with_unbundled_env do
+      Open3.capture2e(
+        env_for(app_dir),
+        "bundle", "exec", "bin/rails", "hyperdrive:update", "--", *flags,
         chdir: app_dir
       )
     end
