@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `BundlerArtifactDiscovery#version_matches?` now correctly parses the documented
+  comma-separated single-string form of `versions:` (e.g. `">= 7.0, < 9.0"`).
+  Previously, `Gem::Requirement.new` rejected that form with `BadRequirementError`
+  (subclass of `ArgumentError`), which was caught and silently treated as a
+  version mismatch — installation would skip the artifact with a misleading
+  "does not satisfy" warning. The YAML list form (`versions: [">= 7.0", "< 9.0"]`)
+  was unaffected and continues to work.
+
 ## [0.2.0] - 2026-05-29
 
 ### Added

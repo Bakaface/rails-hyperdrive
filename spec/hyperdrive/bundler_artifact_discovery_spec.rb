@@ -152,6 +152,69 @@ RSpec.describe Rails::Hyperdrive::BundlerArtifactDiscovery do
     end
   end
 
+  describe "versions: multi-constraint parsing" do
+    around { |ex| Dir.mktmpdir { |d| @dir = d; ex.run } }
+    let(:spec) { spec_double("dummy_gem", "1.4.2", @dir) }
+
+    def write_skill(name, body)
+      sdir = File.join(@dir, "lib", "dummy_gem", "hyperdrive", "skills", name)
+      FileUtils.mkdir_p(sdir)
+      File.write(File.join(sdir, "SKILL.md"), body)
+    end
+
+    it "accepts the documented comma-separated single-string form" do
+      write_skill("a", <<~MD)
+        ---
+        name: a
+        description: d
+        gem: dummy_gem
+        versions: ">= 1.0, < 2.0"
+        ---
+
+        # a
+      MD
+      warnings = []
+      results = described_class.discover(specs: [spec], warnings: warnings)
+      expect(warnings).to be_empty
+      expect(results.map(&:name)).to include("a")
+    end
+
+    it "accepts the YAML-list form" do
+      write_skill("b", <<~MD)
+        ---
+        name: b
+        description: d
+        gem: dummy_gem
+        versions:
+          - ">= 1.0"
+          - "< 2.0"
+        ---
+
+        # b
+      MD
+      warnings = []
+      results = described_class.discover(specs: [spec], warnings: warnings)
+      expect(warnings).to be_empty
+      expect(results.map(&:name)).to include("b")
+    end
+
+    it "still rejects an out-of-range version with either form" do
+      write_skill("c", <<~MD)
+        ---
+        name: c
+        description: d
+        gem: dummy_gem
+        versions: ">= 2.0, < 3.0"
+        ---
+
+        # c
+      MD
+      warnings = []
+      expect(described_class.discover(specs: [spec], warnings: warnings)).to be_empty
+      expect(warnings.join).to include("does not satisfy")
+    end
+  end
+
   describe "Artifact#to_h" do
     it "exposes the metadata fields without the body" do
       artifact = described_class.discover(specs: [dummy_spec]).find(&:skill?)
