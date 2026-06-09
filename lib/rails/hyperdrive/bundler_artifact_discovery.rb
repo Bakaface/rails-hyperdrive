@@ -171,8 +171,13 @@ module Rails
         [lines[1...absolute_closing].join, lines[(absolute_closing + 1)..].join]
       end
 
+      # Accepts both YAML list form (versions: [">= 6.0", "< 9.0"]) and the
+      # documented single-string comma form (versions: ">= 6.0, < 9.0").
+      # Gem::Requirement.new does not parse a single comma-separated string,
+      # so split such strings into separate constraints before instantiation.
       def version_matches?(requirement_str, version)
-        Gem::Requirement.new(*Array(requirement_str)).satisfied_by?(Gem::Version.new(version.to_s))
+        parts = Array(requirement_str).flat_map { |s| s.is_a?(String) ? s.split(",").map(&:strip) : s }
+        Gem::Requirement.new(*parts).satisfied_by?(Gem::Version.new(version.to_s))
       rescue ArgumentError
         false
       end
