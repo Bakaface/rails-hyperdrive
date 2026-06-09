@@ -8,7 +8,7 @@ rails_version = ENV["RAILS_VERSION"]
 if rails_version && !rails_version.empty?
   gem "rails", "~> #{rails_version}.0"
 else
-  gem "rails", ">= 7.2", "< 8.1"
+  gem "rails", ">= 7.2"
 end
 gem "sqlite3", "~> 2.0"
 

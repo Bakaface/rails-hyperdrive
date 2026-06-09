@@ -13,7 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         ruby: ["3.2", "3.3", "3.4"]
-        rails: ["7.2", "8.0"]
+        rails: ["7.2", "8.1"]
     env:
       BUNDLE_GEMFILE: ${{ github.workspace }}/Gemfile
       RAILS_VERSION: ${{ matrix.rails }}
@@ -40,7 +40,7 @@ jobs:
     #   - manually via the Actions tab (workflow_dispatch),
     #   - on a PR by applying the `run-smoke` label.
     # Two corner slots cover both Rails majors and both ends of the Ruby
-    # range (floor 3.2/7.2, ceiling 3.4/8.0). The generator + live-boot
+    # range (floor 3.2/7.2, ceiling 3.4/8.1). The generator + live-boot
     # path is where Rails-version differences bite; the regular `test`
     # matrix only exercises it via in-memory Combustion, never a real
     # subprocess install + server boot.
@@ -53,7 +53,7 @@ jobs:
           - ruby: "3.2"
             rails: "7.2"
           - ruby: "3.4"
-            rails: "8.0"
+            rails: "8.1"
     env:
       BUNDLE_GEMFILE: ${{ github.workspace }}/Gemfile
       RAILS_VERSION: ${{ matrix.rails }}

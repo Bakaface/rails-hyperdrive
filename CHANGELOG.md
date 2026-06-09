@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Dropped the `< 8.1` upper cap on the `railties` and `activerecord` runtime
+  dependencies — both are now floor-only (`>= 7.2`), so the gem installs against
+  Rails 8.1 and later without waiting on a new release. The gem uses only stable
+  public Rails APIs and degrades gracefully per-tool, so the cap was conservative
+  rather than load-bearing. CI now exercises Rails 8.1 in place of 8.0.
+
 ## [0.2.0] - 2026-05-29
 
 ### Added

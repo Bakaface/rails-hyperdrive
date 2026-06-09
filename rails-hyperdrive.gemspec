@@ -40,8 +40,8 @@ Gem::Specification.new do |spec|
   spec.executables   = []
   spec.require_paths = ["lib"]
 
-  spec.add_dependency "railties", ">= 7.2", "< 8.1"
-  spec.add_dependency "activerecord", ">= 7.2", "< 8.1"
+  spec.add_dependency "railties", ">= 7.2"
+  spec.add_dependency "activerecord", ">= 7.2"
   spec.add_dependency "mcp", "~> 0.17"
   spec.add_dependency "bundler", ">= 2.3"
 end
