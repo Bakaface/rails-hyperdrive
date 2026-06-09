@@ -23,7 +23,7 @@ bundle exec rspec --tag smoke                      # opt-in end-to-end smoke (sl
 bin/console                                        # IRB with hyperdrive loaded
 bin/bump patch|minor|major                         # bump the gem version (see Versioning)
 
-# CI matrix is Ruby {3.2, 3.3, 3.4} × Rails {7.2, 8.0}.
+# CI matrix is Ruby {3.2, 3.3, 3.4} × Rails {7.2, 8.1}.
 # Reproduce a specific slot locally:
 RAILS_VERSION=7.2 bundle install && RAILS_VERSION=7.2 bundle exec rspec
 ```
@@ -106,5 +106,5 @@ Dedup is **two-phase**. *Phase 1* (discovery) collapses same-name variants **wit
 ## Gemfile & dependency notes
 
 - `Gemfile.lock` is **gitignored** — Bundler resolves fresh each install. CI keys its cache off `RAILS_VERSION` to avoid cross-slot bleed.
-- Runtime deps: `railties`, `activerecord` (both `>= 7.2, < 8.1`), `mcp ~> 0.17`, `bundler >= 2.3`.
+- Runtime deps: `railties`, `activerecord` (both `>= 7.2`, no upper cap), `mcp ~> 0.17`, `bundler >= 2.3`.
 - License must stay MIT throughout, including transitive runtime deps — no Apache-licensed runtime additions.
